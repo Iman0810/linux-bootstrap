@@ -8,6 +8,7 @@ import (
 	"github.com/Iman0810/linux-bootstrap/internal/packages"
 	"github.com/Iman0810/linux-bootstrap/internal/runner"
 	"github.com/Iman0810/linux-bootstrap/internal/system"
+	"github.com/Iman0810/linux-bootstrap/internal/prompt"
 )
 
 func Run() {
@@ -86,6 +87,19 @@ func runSetup(args []string) {
 	fmt.Println("Dry Run:", *dryRun)
 
 	fmt.Println()
+
+	if *dryRun {
+		fmt.Println("Dry-run mode enabled. No changes will be made.")
+	} else {
+		confirmed := prompt.Confirm(
+			"These operations will modify your system. Continue?",
+		)
+
+		if !confirmed {
+			fmt.Println("Setup cancelled.")
+			return
+		}
+	}
 
 	err = manager.Update()
 	if err != nil {
