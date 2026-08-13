@@ -1,33 +1,23 @@
 package packages
 
 import (
-	"os/exec"
+	"github.com/Iman0810/linux-bootstrap/internal/runner"
 )
 
-type AptManager struct{}
+type AptManager struct {
+	Runner runner.Runner
+}
 
 func (a AptManager) Update() error {
-	cmd := exec.Command("sudo", "apt", "update")
-
-	return cmd.Run()
+	return a.Runner.Run("sudo", "apt", "update")
 }
 
 func (a AptManager) Install(packages ...string) error {
 	args := append([]string{"apt", "install", "-y"}, packages...)
 
-	cmd := exec.Command("sudo", args...)
-
-	return cmd.Run()
+	return a.Runner.Run("sudo", args...)
 }
 
 func (a AptManager) IsInstalled(packageName string) bool {
-	cmd := exec.Command("dpkg", "-s", packageName)
-
-	err := cmd.Run()
-
-	return err == nil
-}
-
-func (a AptManager) String() string {
-	return "APT"
+	return false
 }

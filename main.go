@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"log"
 
-	
-	"github.com/Iman0810/linux-bootstrap/internal/system"
 	"github.com/Iman0810/linux-bootstrap/internal/packages"
+	"github.com/Iman0810/linux-bootstrap/internal/runner"
+	"github.com/Iman0810/linux-bootstrap/internal/system"
 )
 
 func main() {
-	
 	osInfo, err := system.GetOSInfo()
 	if err != nil {
 		log.Fatal(err)
@@ -18,8 +17,12 @@ func main() {
 
 	packageManager := packages.DetectManager(osInfo)
 
-	manager := packages.GetPackageManager(packageManager)
-	
+	r := runner.Runner{
+		DryRun: true,
+	}
+
+	manager := packages.GetPackageManager(packageManager, r)
+
 	fmt.Println("Linux Bootstrap")
 	fmt.Println("----------------")
 	fmt.Println("OS:", osInfo.Name)
@@ -33,5 +36,15 @@ func main() {
 	}
 
 	fmt.Println("Package manager initialized successfully")
-}
 
+	fmt.Println("\nTesting package manager...")
+
+	err = manager.Update()
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = manager.Install("git", "curl", "wget")
+	if err != nil {
+	log.Fatal(err)
+}
+}
