@@ -22,5 +22,18 @@ func (r Runner) Run(command string, args ...string) error {
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
 
-	return cmd.Run()
+	err := cmd.Run()
+	if err != nil {
+		if exitError, ok := err.(*exec.ExitError); ok {
+			return fmt.Errorf(
+				"command %q failed with exit code %d",
+				command,
+				exitError.ExitCode(),
+			)
+		}
+
+		return fmt.Errorf("failed to execute %q: %w", command, err)
+	}
+
+	return nil
 }
