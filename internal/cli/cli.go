@@ -6,9 +6,9 @@ import (
 	"os"
 
 	"github.com/Iman0810/linux-bootstrap/internal/packages"
+	"github.com/Iman0810/linux-bootstrap/internal/prompt"
 	"github.com/Iman0810/linux-bootstrap/internal/runner"
 	"github.com/Iman0810/linux-bootstrap/internal/system"
-	"github.com/Iman0810/linux-bootstrap/internal/prompt"
 )
 
 func Run() {
@@ -79,6 +79,10 @@ func runSetup(args []string) {
 		fmt.Println("Unsupported package manager:", packageManager)
 		return
 	}
+
+	fmt.Println("Git installed:", manager.IsInstalled("git"))
+	fmt.Println("Curl installed:", manager.IsInstalled("curl"))
+	fmt.Println("Wget installed:", manager.IsInstalled("wget"))
 
 	fmt.Println("Linux Bootstrap Setup")
 	fmt.Println("----------------------")

@@ -37,3 +37,31 @@ func (r Runner) Run(command string, args ...string) error {
 
 	return nil
 }
+
+func (r Runner) Output(command string, args ...string) (string, error) {
+	if r.DryRun {
+		fmt.Printf("[DRY RUN] %s %v\n", command, args)
+		return "", nil
+	}
+
+	cmd := exec.Command(command, args...)
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		if exitError, ok := err.(*exec.ExitError); ok {
+			return string(output), fmt.Errorf(
+				"command %q failed with exit code %d",
+				command,
+				exitError.ExitCode(),
+			)
+		}
+
+		return string(output), fmt.Errorf(
+			"failed to execute %q: %w",
+			command,
+			err,
+		)
+	}
+
+	return string(output), nil
+}

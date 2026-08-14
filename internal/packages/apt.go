@@ -19,5 +19,7 @@ func (a AptManager) Install(packages ...string) error {
 }
 
 func (a AptManager) IsInstalled(packageName string) bool {
-	return false
+	_, err := a.Runner.Output("dpkg", "-s", packageName)
+
+	return err == nil
 }
