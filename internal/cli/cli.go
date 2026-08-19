@@ -132,6 +132,17 @@ func runSetup(args []string) {
 		fmt.Println("Update failed:", err)
 		return
 	}
+
+	err = manager.Install(plan.Missing...)
+	if err != nil {
+		fmt.Println("Installation failed:", err)
+		return
+	}
+	if *dryRun{
+		fmt.Println("\nDry-run mode enabled. No changes were made.")
+	}else {
+		fmt.Println("\nSetup completed successfully.")
+	}
 }
 
 func printUsage() {
