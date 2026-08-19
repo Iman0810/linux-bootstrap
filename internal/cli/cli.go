@@ -80,17 +80,39 @@ func runSetup(args []string) {
 		return
 	}
 
-	fmt.Println("Git installed:", manager.IsInstalled("git"))
-	fmt.Println("Curl installed:", manager.IsInstalled("curl"))
-	fmt.Println("Wget installed:", manager.IsInstalled("wget"))
-
 	fmt.Println("Linux Bootstrap Setup")
 	fmt.Println("----------------------")
 	fmt.Println("OS:", osInfo.Name)
 	fmt.Println("Package Manager:", packageManager)
 	fmt.Println("Dry Run:", *dryRun)
-
 	fmt.Println()
+
+	desiredPackages := []string{
+		"git",
+		"curl",
+		"wget",
+		"unzip",
+	}
+
+	plan := packages.BuildPlan(manager, desiredPackages)
+
+	fmt.Println("Package Check")
+	fmt.Println("-------------")
+
+	for _, packageName := range plan.Installed {
+		fmt.Println("✓", packageName)
+	}
+
+	for _, packageName := range plan.Missing {
+		fmt.Println("✗", packageName)
+	}
+
+	if len(plan.Missing) == 0 {
+		fmt.Println("\nEverything is already installed.")
+		return
+	}
+
+	fmt.Printf("\nPackages to install: %d\n", len(plan.Missing))
 
 	if *dryRun {
 		fmt.Println("Dry-run mode enabled. No changes will be made.")
@@ -108,12 +130,6 @@ func runSetup(args []string) {
 	err = manager.Update()
 	if err != nil {
 		fmt.Println("Update failed:", err)
-		return
-	}
-
-	err = manager.Install("git", "curl", "wget")
-	if err != nil {
-		fmt.Println("Installation failed:", err)
 		return
 	}
 }
