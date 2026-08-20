@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/Iman0810/linux-bootstrap/internal/packages"
+	"github.com/Iman0810/linux-bootstrap/internal/profile"
 	"github.com/Iman0810/linux-bootstrap/internal/prompt"
 	"github.com/Iman0810/linux-bootstrap/internal/runner"
 	"github.com/Iman0810/linux-bootstrap/internal/system"
@@ -79,22 +80,20 @@ func runSetup(args []string) {
 		fmt.Println("Unsupported package manager:", packageManager)
 		return
 	}
+	selectedProfile := profile.Essentials
+
+	plan := packages.BuildPlan(manager, selectedProfile.Packages)
 
 	fmt.Println("Linux Bootstrap Setup")
 	fmt.Println("----------------------")
+	fmt.Println("Profile:", selectedProfile.Name)
+	fmt.Println("Description:", selectedProfile.Description)
 	fmt.Println("OS:", osInfo.Name)
 	fmt.Println("Package Manager:", packageManager)
 	fmt.Println("Dry Run:", *dryRun)
 	fmt.Println()
 
-	desiredPackages := []string{
-		"git",
-		"curl",
-		"wget",
-		"unzip",
-	}
-
-	plan := packages.BuildPlan(manager, desiredPackages)
+	
 
 	fmt.Println("Package Check")
 	fmt.Println("-------------")
@@ -138,9 +137,9 @@ func runSetup(args []string) {
 		fmt.Println("Installation failed:", err)
 		return
 	}
-	if *dryRun{
+	if *dryRun {
 		fmt.Println("\nDry-run mode enabled. No changes were made.")
-	}else {
+	} else {
 		fmt.Println("\nSetup completed successfully.")
 	}
 }
