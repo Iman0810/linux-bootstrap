@@ -27,6 +27,9 @@ func Run() {
 	case "profiles":
 		runProfiles()
 
+	case "status":
+		runStatus()
+
 	case "setup":
 		runSetup(os.Args[2:])
 
@@ -166,12 +169,56 @@ func runSetup(args []string) {
 		fmt.Println("\nSetup completed successfully.")
 	}
 }
+func runStatus() {
+	osInfo, err := system.GetOSInfo()
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	packageManager := packages.DetectManager(osInfo)
+
+	r := runner.Runner{}
+
+	manager := packages.GetPackageManager(packageManager, r)
+
+	if manager == nil {
+		fmt.Println("Unsupported package manager:", packageManager)
+		return
+	}
+
+	fmt.Println("Linux Bootstrap Status")
+	fmt.Println("----------------------")
+	fmt.Println()
+	fmt.Println("OS:", osInfo.Name, osInfo.Version)
+	fmt.Println("Package Manager:", packageManager)
+	fmt.Println()
+
+	fmt.Println("Profiles")
+	fmt.Println("--------")
+
+	for _, p := range profile.List() {
+		status := profile.CheckStatus(manager, p)
+
+		if len(status.Plan.Missing) == 0 {
+			fmt.Printf("✓ %-15s Ready\n", p.Name)
+		} else {
+			fmt.Printf(
+				"✗ %-15s Missing %d package(s)\n",
+				p.Name,
+				len(status.Plan.Missing),
+			)
+		}
+	}
+}
 
 func printUsage() {
 	fmt.Println("Linux Bootstrap")
 	fmt.Println()
 	fmt.Println("Usage:")
 	fmt.Println("  linux-bootstrap info")
+	fmt.Println("  linux-bootstrap profiles")
+	fmt.Println("  linux-bootstrap status")
 	fmt.Println("  linux-bootstrap setup [--profile <name>] [--dry-run]")
 	fmt.Println()
 	fmt.Println("Profiles:")

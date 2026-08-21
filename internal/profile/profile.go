@@ -6,22 +6,6 @@ type Profile struct {
 	Packages    []string
 }
 
-func Get(name string) (Profile, bool) {
-	switch name {
-	case "essentials":
-		return Essentials, true
-
-	case "development":
-		return Development, true
-
-	case "multimedia":
-		return Multimedia, true
-
-	default:
-		return Profile{}, false
-	}
-}
-
 var Essentials = Profile{
 	Name:        "essentials",
 	Description: "Basic packages useful on a fresh Linux installation",
@@ -54,10 +38,22 @@ var Multimedia = Profile{
 	},
 }
 
-func List() []Profile {
-	return []Profile{
-		Essentials,
-		Development,
-		Multimedia,
+var profiles = []Profile{
+	Essentials,
+	Development,
+	Multimedia,
+}
+
+func Get(name string) (Profile, bool) {
+	for _, p := range profiles {
+		if p.Name == name {
+			return p, true
+		}
 	}
+
+	return Profile{}, false
+}
+
+func List() []Profile {
+	return profiles
 }
