@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/Iman0810/linux-bootstrap/internal/hardware"
 	"github.com/Iman0810/linux-bootstrap/internal/packages"
 	"github.com/Iman0810/linux-bootstrap/internal/profile"
 	"github.com/Iman0810/linux-bootstrap/internal/prompt"
@@ -55,6 +56,32 @@ func runInfo() {
 	fmt.Println("ID:", osInfo.ID)
 	fmt.Println("Based on:", osInfo.IDLike)
 	fmt.Println("Package Manager:", packageManager)
+	fmt.Println()
+	fmt.Println("Hardware")
+	fmt.Println("--------")
+
+	gpus := hardware.DetectGPUs()
+
+	if len(gpus) == 0 {
+		fmt.Println("GPU: Not detected")
+	} else {
+		for _, gpu := range gpus {
+			fmt.Printf("GPU: %s (%s)\n", gpu.Name, gpu.Vendor)
+		}
+	}
+
+	nvidia := hardware.DetectNvidiaDriver()
+
+	fmt.Println()
+	fmt.Println("NVIDIA Driver")
+	fmt.Println("-------------")
+
+	if nvidia.Installed {
+		fmt.Println("Status:", "Installed")
+		fmt.Println("Version:", nvidia.Version)
+	} else {
+		fmt.Println("Status:", "Not detected")
+	}
 
 }
 func runProfiles() {
