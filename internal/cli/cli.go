@@ -208,6 +208,10 @@ func runStatus() {
 				p.Name,
 				len(status.Plan.Missing),
 			)
+
+			for _, packageName := range status.Plan.Missing {
+				fmt.Println("    -", packageName)
+			}
 		}
 	}
 }
