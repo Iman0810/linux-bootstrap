@@ -24,6 +24,9 @@ func Run() {
 	case "info":
 		runInfo()
 
+	case "profiles":
+		runProfiles()
+
 	case "setup":
 		runSetup(os.Args[2:])
 
@@ -49,6 +52,18 @@ func runInfo() {
 	fmt.Println("ID:", osInfo.ID)
 	fmt.Println("Based on:", osInfo.IDLike)
 	fmt.Println("Package Manager:", packageManager)
+
+}
+func runProfiles() {
+	fmt.Println("Linux Bootstrap Profiles")
+	fmt.Println("-------------------------")
+	fmt.Println()
+
+	for _, p := range profile.List() {
+		fmt.Println(p.Name)
+		fmt.Println("  " + p.Description)
+		fmt.Println()
+	}
 }
 
 func runSetup(args []string) {

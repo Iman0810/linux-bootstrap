@@ -53,3 +53,11 @@ var Multimedia = Profile{
 		"vlc",
 	},
 }
+
+func List() []Profile {
+	return []Profile{
+		Essentials,
+		Development,
+		Multimedia,
+	}
+}
