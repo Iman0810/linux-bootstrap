@@ -59,6 +59,11 @@ func runSetup(args []string) {
 		false,
 		"Show commands without executing them",
 	)
+	profileName := setupFlags.String(
+	"profile",
+	"essentials",
+	"Profile to install",
+)
 
 	setupFlags.Parse(args)
 
@@ -80,7 +85,7 @@ func runSetup(args []string) {
 		fmt.Println("Unsupported package manager:", packageManager)
 		return
 	}
-	selectedProfile := profile.Essentials
+	selectedProfile := profile.Development
 
 	plan := packages.BuildPlan(manager, selectedProfile.Packages)
 
@@ -92,8 +97,6 @@ func runSetup(args []string) {
 	fmt.Println("Package Manager:", packageManager)
 	fmt.Println("Dry Run:", *dryRun)
 	fmt.Println()
-
-	
 
 	fmt.Println("Package Check")
 	fmt.Println("-------------")
