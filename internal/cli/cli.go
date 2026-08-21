@@ -162,4 +162,5 @@ func printUsage() {
 	fmt.Println("Profiles:")
 	fmt.Println("  essentials")
 	fmt.Println("  development")
+	fmt.Println("  multimedia")
 }

@@ -14,6 +14,9 @@ func Get(name string) (Profile, bool) {
 	case "development":
 		return Development, true
 
+	case "multimedia":
+		return Multimedia, true
+
 	default:
 		return Profile{}, false
 	}
@@ -39,5 +42,14 @@ var Development = Profile{
 		"wget",
 		"unzip",
 		"build-essential",
+	},
+}
+
+var Multimedia = Profile{
+	Name:        "multimedia",
+	Description: "Common multimedia tools and codecs",
+	Packages: []string{
+		"ffmpeg",
+		"vlc",
 	},
 }
