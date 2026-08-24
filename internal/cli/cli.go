@@ -56,33 +56,33 @@ func runInfo() {
 	fmt.Println("ID:", osInfo.ID)
 	fmt.Println("Based on:", osInfo.IDLike)
 	fmt.Println("Package Manager:", packageManager)
+
 	fmt.Println()
 	fmt.Println("Hardware")
 	fmt.Println("--------")
 
-	gpus := hardware.DetectGPUs()
+	hardwareStatus := hardware.DetectHardware()
 
-	if len(gpus) == 0 {
+	if len(hardwareStatus.GPUs) == 0 {
 		fmt.Println("GPU: Not detected")
 	} else {
-		for _, gpu := range gpus {
+		for _, gpu := range hardwareStatus.GPUs {
 			fmt.Printf("GPU: %s (%s)\n", gpu.Name, gpu.Vendor)
 		}
 	}
 
-	nvidia := hardware.DetectNvidiaDriver()
+	if hardwareStatus.NvidiaFound {
+		fmt.Println()
+		fmt.Println("NVIDIA Driver")
+		fmt.Println("-------------")
 
-	fmt.Println()
-	fmt.Println("NVIDIA Driver")
-	fmt.Println("-------------")
-
-	if nvidia.Installed {
-		fmt.Println("Status:", "Installed")
-		fmt.Println("Version:", nvidia.Version)
-	} else {
-		fmt.Println("Status:", "Not detected")
+		if hardwareStatus.Nvidia.Installed {
+			fmt.Println("Status:", "Installed")
+			fmt.Println("Version:", hardwareStatus.Nvidia.Version)
+		} else {
+			fmt.Println("Status:", "Not detected")
+		}
 	}
-
 }
 func runProfiles() {
 	fmt.Println("Linux Bootstrap Profiles")
