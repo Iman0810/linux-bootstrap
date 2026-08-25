@@ -10,6 +10,7 @@ import (
 	"github.com/Iman0810/linux-bootstrap/internal/packages"
 	"github.com/Iman0810/linux-bootstrap/internal/profile"
 	"github.com/Iman0810/linux-bootstrap/internal/prompt"
+	"github.com/Iman0810/linux-bootstrap/internal/recommendation"
 	"github.com/Iman0810/linux-bootstrap/internal/runner"
 	"github.com/Iman0810/linux-bootstrap/internal/system"
 )
@@ -314,6 +315,23 @@ func runDoctor() {
 				fmt.Println("    -", packageName)
 			}
 		}
+	}
+	recommendations := recommendation.Generate(report)
+
+	fmt.Println()
+	fmt.Println("Recommendations")
+	fmt.Println("---------------")
+
+	if len(recommendations) == 0 {
+		fmt.Println("✓ No issues found.")
+		return
+	}
+
+	for _, rec := range recommendations {
+		fmt.Println()
+		fmt.Println("→", rec.Title)
+		fmt.Println(" ", rec.Description)
+		fmt.Println(" ", rec.Command)
 	}
 }
 
