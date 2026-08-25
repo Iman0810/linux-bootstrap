@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/Iman0810/linux-bootstrap/internal/doctor"
 	"github.com/Iman0810/linux-bootstrap/internal/hardware"
 	"github.com/Iman0810/linux-bootstrap/internal/packages"
 	"github.com/Iman0810/linux-bootstrap/internal/profile"
@@ -30,6 +31,9 @@ func Run() {
 
 	case "status":
 		runStatus()
+
+	case "doctor":
+		runDoctor()
 
 	case "setup":
 		runSetup(os.Args[2:])
@@ -71,7 +75,7 @@ func runInfo() {
 		}
 	}
 
-	if hardwareStatus.NvidiaFound {
+	if hardwareStatus.NvidiaFound && hardwareStatus.Nvidia != nil {
 		fmt.Println()
 		fmt.Println("NVIDIA Driver")
 		fmt.Println("-------------")
@@ -84,6 +88,7 @@ func runInfo() {
 		}
 	}
 }
+
 func runProfiles() {
 	fmt.Println("Linux Bootstrap Profiles")
 	fmt.Println("-------------------------")
@@ -104,6 +109,7 @@ func runSetup(args []string) {
 		false,
 		"Show commands without executing them",
 	)
+
 	profileName := setupFlags.String(
 		"profile",
 		"essentials",
@@ -130,8 +136,8 @@ func runSetup(args []string) {
 		fmt.Println("Unsupported package manager:", packageManager)
 		return
 	}
-	selectedProfile, ok := profile.Get(*profileName)
 
+	selectedProfile, ok := profile.Get(*profileName)
 	if !ok {
 		fmt.Println("Unknown profile:", *profileName)
 		return
@@ -190,12 +196,14 @@ func runSetup(args []string) {
 		fmt.Println("Installation failed:", err)
 		return
 	}
+
 	if *dryRun {
 		fmt.Println("\nDry-run mode enabled. No changes were made.")
 	} else {
 		fmt.Println("\nSetup completed successfully.")
 	}
 }
+
 func runStatus() {
 	osInfo, err := system.GetOSInfo()
 	if err != nil {
@@ -243,6 +251,72 @@ func runStatus() {
 	}
 }
 
+func runDoctor() {
+	report, err := doctor.Run()
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	fmt.Println("Linux Bootstrap Doctor")
+	fmt.Println("----------------------")
+	fmt.Println()
+
+	fmt.Println("OS")
+	fmt.Println("--")
+	fmt.Println("✓", report.OS.Name, report.OS.Version)
+
+	fmt.Println()
+	fmt.Println("Package Manager")
+	fmt.Println("---------------")
+	fmt.Println("✓", report.PackageManager)
+
+	fmt.Println()
+	fmt.Println("Hardware")
+	fmt.Println("--------")
+
+	if len(report.GPUs) == 0 {
+		fmt.Println("✗ No GPU detected")
+	} else {
+		for _, gpu := range report.GPUs {
+			fmt.Printf("✓ %s (%s)\n", gpu.Name, gpu.Vendor)
+		}
+	}
+
+	if report.NvidiaFound {
+		fmt.Println()
+		fmt.Println("NVIDIA Driver")
+		fmt.Println("-------------")
+
+		if report.NvidiaInstalled {
+			fmt.Println("✓ Driver installed")
+			fmt.Println("  Version:", report.NvidiaVersion)
+		} else {
+			fmt.Println("✗ NVIDIA driver not detected")
+		}
+	}
+
+	fmt.Println()
+	fmt.Println("Profiles")
+	fmt.Println("--------")
+
+	for _, p := range report.Profiles {
+		if p.Ready {
+			fmt.Printf("✓ %-15s Ready\n", p.Name)
+		} else {
+			fmt.Printf(
+				"✗ %-15s Missing %d package(s)\n",
+				p.Name,
+				len(p.Missing),
+			)
+
+			for _, packageName := range p.Missing {
+				fmt.Println("    -", packageName)
+			}
+		}
+	}
+}
+
 func printUsage() {
 	fmt.Println("Linux Bootstrap")
 	fmt.Println()
@@ -250,6 +324,7 @@ func printUsage() {
 	fmt.Println("  linux-bootstrap info")
 	fmt.Println("  linux-bootstrap profiles")
 	fmt.Println("  linux-bootstrap status")
+	fmt.Println("  linux-bootstrap doctor")
 	fmt.Println("  linux-bootstrap setup [--profile <name>] [--dry-run]")
 	fmt.Println()
 	fmt.Println("Profiles:")
