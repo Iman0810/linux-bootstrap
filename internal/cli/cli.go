@@ -15,10 +15,10 @@ import (
 	"github.com/Iman0810/linux-bootstrap/internal/system"
 )
 
-func Run() {
+func Run() error {
 	if len(os.Args) < 2 {
 		printUsage()
-		return
+		return nil
 	}
 
 	command := os.Args[1]
@@ -42,7 +42,10 @@ func Run() {
 	default:
 		fmt.Printf("Unknown command: %s\n\n", command)
 		printUsage()
+		return fmt.Errorf("unknown command: %s", command)
 	}
+
+	return nil
 }
 
 func runInfo() {
