@@ -25,7 +25,7 @@ func Run() error {
 
 	switch command {
 	case "info":
-		runInfo()
+		return runInfo()
 
 	case "profiles":
 		runProfiles()
@@ -48,11 +48,10 @@ func Run() error {
 	return nil
 }
 
-func runInfo() {
+func runInfo() error {
 	osInfo, err := system.GetOSInfo()
 	if err != nil {
-		fmt.Println("Error:", err)
-		return
+		return err
 	}
 
 	packageManager := packages.DetectManager(osInfo)
@@ -91,6 +90,7 @@ func runInfo() {
 			fmt.Println("Status:", "Not detected")
 		}
 	}
+	return nil
 }
 
 func runProfiles() {
