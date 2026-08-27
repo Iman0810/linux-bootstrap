@@ -2,7 +2,7 @@ package packages
 
 import (
 	"fmt"
-	
+
 	"github.com/Iman0810/linux-bootstrap/internal/system"
 )
 

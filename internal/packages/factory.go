@@ -9,6 +9,16 @@ func GetPackageManager(manager Manager, r runner.Runner) PackageManager {
 			Runner: r,
 		}
 
+	case DNF:
+		return DnfManager{
+			Runner: r,
+		}
+
+	case Pacman:
+		return PacmanManager{
+			Runner: r,
+		}
+
 	default:
 		return nil
 	}
