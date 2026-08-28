@@ -19,10 +19,11 @@ Currently supported:
 * [x] Dry-run mode
 * [x] User confirmation before system changes
 * [x] APT support
-* [x] DNF support
-* [x] Pacman support
 * [x] Multimedia codec installation
 * [x] NVIDIA driver detection and setup
+* [x] Post-installation verification
+* [x] DNF Initial implementation
+* [x] pacman Initial implementation
 
 Currently tested on:
 
@@ -33,7 +34,8 @@ Currently tested on:
 * [ ] Development environment setup
 * [ ] Docker setup
 * [ ] System diagnostics
-* [ ] Post-installation verification
+* [ ] DNF support
+* [ ] Pacman support
 * [ ] Additional Linux distributions
 
 ## Project Structure
