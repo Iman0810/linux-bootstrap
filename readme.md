@@ -10,11 +10,19 @@ The goal of **Linux Bootstrap** is to automate the common setup tasks performed 
 
 Currently supported:
 
-* Linux distribution detection
-* Distribution version detection
-* Package manager detection
-* Package manager abstraction
-* Initial APT implementation
+* [x] Linux distribution detection
+* [x] Distribution version detection
+* [x] Package manager detection
+* [x] Package manager abstraction
+* [x] Initial APT implementation
+* [x] Safe command execution
+* [x] Dry-run mode
+* [x] User confirmation before system changes
+* [x] APT support
+* [x] DNF support
+* [x] Pacman support
+* [x] Multimedia codec installation
+* [x] NVIDIA driver detection and setup
 
 Currently tested on:
 
@@ -22,14 +30,6 @@ Currently tested on:
 
 ## Planned Features
 
-* [ ] Safe command execution
-* [ ] Dry-run mode
-* [ ] User confirmation before system changes
-* [ ] APT support
-* [ ] DNF support
-* [ ] Pacman support
-* [ ] Multimedia codec installation
-* [ ] NVIDIA driver detection and setup
 * [ ] Development environment setup
 * [ ] Docker setup
 * [ ] System diagnostics
