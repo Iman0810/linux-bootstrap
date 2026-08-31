@@ -30,7 +30,7 @@ Currently tested on:
 * Pop!_OS 24.04
 
 ## Planned Features
-
+* [inprogress...] Unit testing
 * [ ] Development environment setup
 * [ ] Docker setup
 * [ ] System diagnostics
