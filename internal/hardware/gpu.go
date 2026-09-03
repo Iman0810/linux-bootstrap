@@ -27,7 +27,11 @@ func DetectGPUs() []GPU {
 		return []GPU{}
 	}
 
-	lines := strings.Split(string(output), "\n")
+	return ParseGPUs(string(output))
+}
+
+func ParseGPUs(output string) []GPU {
+	lines := strings.Split(output, "\n")
 	var gpus []GPU
 
 	for _, line := range lines {
@@ -61,3 +65,4 @@ func DetectGPUs() []GPU {
 
 	return gpus
 }
+
