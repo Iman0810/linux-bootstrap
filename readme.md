@@ -5,6 +5,7 @@ A cross-distro Linux post-installation automation tool written in Go.
 The goal of **Linux Bootstrap** is to automate the common setup tasks performed after installing a fresh Linux distribution, while detecting the system and adapting to its environment.
 
 ## Current Status
+Temporarily on hold 
 
 🚧 **Early development**
 
@@ -62,7 +63,7 @@ Clone the repository and run:
 go run .
 ```
 
-The project is currently under active development. Features and supported distributions will be added incrementally.
+The project is currently Temporarily on hold. Features and supported distributions will be added incrementally.
 
 ## License
 
