@@ -33,31 +33,17 @@ func Run() (Report, error) {
 	packageManager := packages.DetectManager(osInfo)
 
 	r := runner.Runner{}
-
 	manager := packages.GetPackageManager(packageManager, r)
 
-	report := Report{
-		OS:             osInfo,
-		PackageManager: packageManager,
-	}
-
-	// Hardware
 	hardwareStatus := hardware.DetectHardware()
 
-	report.GPUs = hardwareStatus.GPUs
-	report.NvidiaFound = hardwareStatus.NvidiaFound
+	var profiles []ProfileStatus
 
-	if hardwareStatus.NvidiaFound && hardwareStatus.Nvidia != nil {
-		report.NvidiaInstalled = hardwareStatus.Nvidia.Installed
-		report.NvidiaVersion = hardwareStatus.Nvidia.Version
-	}
-
-	// Profile status
 	if manager != nil {
 		for _, p := range profile.List() {
 			status := profile.CheckStatus(manager, p)
 
-			report.Profiles = append(report.Profiles, ProfileStatus{
+			profiles = append(profiles, ProfileStatus{
 				Name:    p.Name,
 				Ready:   len(status.Plan.Missing) == 0,
 				Missing: status.Plan.Missing,
@@ -65,5 +51,32 @@ func Run() (Report, error) {
 		}
 	}
 
-	return report, nil
+	return BuildReport(
+		osInfo,
+		packageManager,
+		hardwareStatus,
+		profiles,
+	), nil
+}
+
+func BuildReport(
+	osInfo system.OSInfo,
+	packageManager packages.Manager,
+	hardwareStatus hardware.HardwareStatus,
+	profiles []ProfileStatus,
+) Report {
+	report := Report{
+		OS:             osInfo,
+		PackageManager: packageManager,
+		GPUs:           hardwareStatus.GPUs,
+		NvidiaFound:    hardwareStatus.NvidiaFound,
+		Profiles:       profiles,
+	}
+
+	if hardwareStatus.NvidiaFound && hardwareStatus.Nvidia != nil {
+		report.NvidiaInstalled = hardwareStatus.Nvidia.Installed
+		report.NvidiaVersion = hardwareStatus.Nvidia.Version
+	}
+
+	return report
 }
