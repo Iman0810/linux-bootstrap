@@ -65,4 +65,3 @@ func ParseGPUs(output string) []GPU {
 
 	return gpus
 }
-

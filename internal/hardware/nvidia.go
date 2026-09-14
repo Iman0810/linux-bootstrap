@@ -1,68 +1,56 @@
- package hardware
+package hardware
 
 import (
 	"os/exec"
 	"strings"
 )
 
-type GPUVendor string
-
-const (
-	NVIDIA  GPUVendor = "nvidia"
-	AMD     GPUVendor = "amd"
-	Intel   GPUVendor = "intel"
-	Unknown GPUVendor = "unknown"
-)
-
-type GPU struct {
-	Vendor GPUVendor
-	Name   string
+type NvidiaStatus struct {
+	Installed bool
+	Version   string
 }
 
-func DetectGPUs() []GPU {
-	cmd := exec.Command("lspci")
+func DetectNvidiaDriver(gpus []GPU) NvidiaStatus {
+	hasNvidia := false
+
+	for _, gpu := range gpus {
+		if gpu.Vendor == NVIDIA {
+			hasNvidia = true
+			break
+		}
+	}
+
+	if !hasNvidia {
+		return NvidiaStatus{}
+	}
+
+	cmd := exec.Command(
+		"nvidia-smi",
+		"--query-gpu=driver_version",
+		"--format=csv,noheader",
+	)
 
 	output, err := cmd.Output()
 	if err != nil {
-		return []GPU{}
-	}
-
-	return ParseGPUs(string(output))
-}
-
-func ParseGPUs(output string) []GPU {
-	lines := strings.Split(output, "\n")
-	var gpus []GPU
-
-	for _, line := range lines {
-		lower := strings.ToLower(line)
-
-		if !strings.Contains(lower, "vga") &&
-			!strings.Contains(lower, "3d controller") {
-			continue
-		}
-
-		switch {
-		case strings.Contains(lower, "nvidia"):
-			gpus = append(gpus, GPU{
-				Vendor: NVIDIA,
-				Name:   strings.TrimSpace(line),
-			})
-
-		case strings.Contains(lower, "amd"):
-			gpus = append(gpus, GPU{
-				Vendor: AMD,
-				Name:   strings.TrimSpace(line),
-			})
-
-		case strings.Contains(lower, "intel"):
-			gpus = append(gpus, GPU{
-				Vendor: Intel,
-				Name:   strings.TrimSpace(line),
-			})
+		return NvidiaStatus{
+			Installed: false,
 		}
 	}
 
-	return gpus
+	return ParseNvidiaDriver(string(output))
 }
 
+func ParseNvidiaDriver(output string) NvidiaStatus {
+	version := strings.TrimSpace(output)
+
+	if version == "" {
+		return NvidiaStatus{
+			Installed: false,
+		}
+	}
+
+	return NvidiaStatus{
+		Installed: true,
+		Version:   version,
+	}
+}
