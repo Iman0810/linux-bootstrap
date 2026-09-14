@@ -7,7 +7,7 @@ type PacmanManager struct {
 }
 
 func (p PacmanManager) Update() error {
-	return p.Runner.Run("sudo", "pacman", "-Sy")
+	return p.Runner.Run("sudo", "pacman", "-Syu")
 }
 
 func (p PacmanManager) Install(packages ...string) error {
