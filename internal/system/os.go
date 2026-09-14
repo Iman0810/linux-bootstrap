@@ -7,10 +7,10 @@ import (
 )
 
 type OSInfo struct {
-	Name     string
-	Version  string
-	ID       string
-	IDLike   string
+	Name    string
+	Version string
+	ID      string
+	IDLike  string
 }
 
 func GetOSInfo() (OSInfo, error) {
@@ -20,13 +20,28 @@ func GetOSInfo() (OSInfo, error) {
 	}
 	defer file.Close()
 
-	info := OSInfo{}
+	var builder strings.Builder
 
 	scanner := bufio.NewScanner(file)
 
 	for scanner.Scan() {
-		line := scanner.Text()
+		builder.WriteString(scanner.Text())
+		builder.WriteString("\n")
+	}
 
+	if err := scanner.Err(); err != nil {
+		return OSInfo{}, err
+	}
+
+	return ParseOSRelease(builder.String()), nil
+}
+
+func ParseOSRelease(content string) OSInfo {
+	info := OSInfo{}
+
+	lines := strings.Split(content, "\n")
+
+	for _, line := range lines {
 		parts := strings.SplitN(line, "=", 2)
 		if len(parts) != 2 {
 			continue
@@ -47,9 +62,5 @@ func GetOSInfo() (OSInfo, error) {
 		}
 	}
 
-	if err := scanner.Err(); err != nil {
-		return OSInfo{}, err
-	}
-
-	return info, nil
+	return info
 }
