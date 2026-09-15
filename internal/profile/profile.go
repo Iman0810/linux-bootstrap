@@ -1,40 +1,84 @@
 package profile
 
+import "github.com/Iman0810/linux-bootstrap/internal/packages"
+
 type Profile struct {
 	Name        string
 	Description string
-	Packages    []string
+	Packages    map[packages.Manager][]string
 }
 
 var Essentials = Profile{
 	Name:        "essentials",
 	Description: "Basic packages useful on a fresh Linux installation",
-	Packages: []string{
-		"git",
-		"curl",
-		"wget",
-		"unzip",
+	Packages: map[packages.Manager][]string{
+		packages.APT: {
+			"git",
+			"curl",
+			"wget",
+			"unzip",
+		},
+		packages.DNF: {
+			"git",
+			"curl",
+			"wget",
+			"unzip",
+		},
+		packages.Pacman: {
+			"git",
+			"curl",
+			"wget",
+			"unzip",
+		},
 	},
 }
 
 var Development = Profile{
 	Name:        "development",
 	Description: "Common tools for software development",
-	Packages: []string{
-		"git",
-		"curl",
-		"wget",
-		"unzip",
-		"build-essential",
+	Packages: map[packages.Manager][]string{
+		packages.APT: {
+			"git",
+			"curl",
+			"wget",
+			"unzip",
+			"build-essential",
+		},
+		packages.DNF: {
+			"git",
+			"curl",
+			"wget",
+			"unzip",
+			"gcc",
+			"gcc-c++",
+			"make",
+		},
+		packages.Pacman: {
+			"git",
+			"curl",
+			"wget",
+			"unzip",
+			"base-devel",
+		},
 	},
 }
 
 var Multimedia = Profile{
 	Name:        "multimedia",
 	Description: "Common multimedia tools and codecs",
-	Packages: []string{
-		"ffmpeg",
-		"vlc",
+	Packages: map[packages.Manager][]string{
+		packages.APT: {
+			"ffmpeg",
+			"vlc",
+		},
+		packages.DNF: {
+			"ffmpeg",
+			"vlc",
+		},
+		packages.Pacman: {
+			"ffmpeg",
+			"vlc",
+		},
 	},
 }
 
@@ -56,4 +100,7 @@ func Get(name string) (Profile, bool) {
 
 func List() []Profile {
 	return profiles
+}
+func PackagesFor(p Profile, manager packages.Manager) []string {
+	return p.Packages[manager]
 }

@@ -1,6 +1,10 @@
 package profile
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/Iman0810/linux-bootstrap/internal/packages"
+)
 
 func TestGetProfile(t *testing.T) {
 	tests := []struct {
@@ -57,11 +61,13 @@ func TestProfilePackages(t *testing.T) {
 	tests := []struct {
 		name     string
 		profile  Profile
+		manager  packages.Manager
 		expected []string
 	}{
 		{
-			name:    "Essentials",
+			name:    "Essentials APT",
 			profile: Essentials,
+			manager: packages.APT,
 			expected: []string{
 				"git",
 				"curl",
@@ -70,8 +76,31 @@ func TestProfilePackages(t *testing.T) {
 			},
 		},
 		{
-			name:    "Development",
+			name:    "Essentials DNF",
+			profile: Essentials,
+			manager: packages.DNF,
+			expected: []string{
+				"git",
+				"curl",
+				"wget",
+				"unzip",
+			},
+		},
+		{
+			name:    "Essentials Pacman",
+			profile: Essentials,
+			manager: packages.Pacman,
+			expected: []string{
+				"git",
+				"curl",
+				"wget",
+				"unzip",
+			},
+		},
+		{
+			name:    "Development APT",
 			profile: Development,
+			manager: packages.APT,
 			expected: []string{
 				"git",
 				"curl",
@@ -81,8 +110,53 @@ func TestProfilePackages(t *testing.T) {
 			},
 		},
 		{
-			name:    "Multimedia",
+			name:    "Development DNF",
+			profile: Development,
+			manager: packages.DNF,
+			expected: []string{
+				"git",
+				"curl",
+				"wget",
+				"unzip",
+				"gcc",
+				"gcc-c++",
+				"make",
+			},
+		},
+		{
+			name:    "Development Pacman",
+			profile: Development,
+			manager: packages.Pacman,
+			expected: []string{
+				"git",
+				"curl",
+				"wget",
+				"unzip",
+				"base-devel",
+			},
+		},
+		{
+			name:    "Multimedia APT",
 			profile: Multimedia,
+			manager: packages.APT,
+			expected: []string{
+				"ffmpeg",
+				"vlc",
+			},
+		},
+		{
+			name:    "Multimedia DNF",
+			profile: Multimedia,
+			manager: packages.DNF,
+			expected: []string{
+				"ffmpeg",
+				"vlc",
+			},
+		},
+		{
+			name:    "Multimedia Pacman",
+			profile: Multimedia,
+			manager: packages.Pacman,
 			expected: []string{
 				"ffmpeg",
 				"vlc",
@@ -92,21 +166,23 @@ func TestProfilePackages(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if len(tt.profile.Packages) != len(tt.expected) {
+			actual := PackagesFor(tt.profile, tt.manager)
+
+			if len(actual) != len(tt.expected) {
 				t.Fatalf(
 					"expected %d packages, got %d",
 					len(tt.expected),
-					len(tt.profile.Packages),
+					len(actual),
 				)
 			}
 
 			for i, expected := range tt.expected {
-				if tt.profile.Packages[i] != expected {
+				if actual[i] != expected {
 					t.Fatalf(
 						"package %d: expected %q, got %q",
 						i,
 						expected,
-						tt.profile.Packages[i],
+						actual[i],
 					)
 				}
 			}
@@ -139,5 +215,15 @@ func TestListProfiles(t *testing.T) {
 				profile.Name,
 			)
 		}
+	}
+}
+func TestPackagesForUnknownManager(t *testing.T) {
+	actual := PackagesFor(Development, packages.Unknown)
+
+	if len(actual) != 0 {
+		t.Fatalf(
+			"expected no packages for unknown manager, got %v",
+			actual,
+		)
 	}
 }
