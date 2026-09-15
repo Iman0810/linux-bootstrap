@@ -237,7 +237,7 @@ func runStatus() {
 	fmt.Println("--------")
 
 	for _, p := range profile.List() {
-		status := profile.CheckStatus(manager, p)
+		status := profile.CheckStatus(manager, packageManager, p)
 
 		if len(status.Plan.Missing) == 0 {
 			fmt.Printf("✓ %-15s Ready\n", p.Name)
