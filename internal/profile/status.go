@@ -7,8 +7,15 @@ type Status struct {
 	Plan    packages.PackagePlan
 }
 
-func CheckStatus(manager packages.PackageManager, p Profile) Status {
-	plan := packages.BuildPlan(manager, p.Packages)
+func CheckStatus(
+	manager packages.PackageManager,
+	managerType packages.Manager,
+	p Profile,
+) Status {
+	plan := packages.BuildPlan(
+		manager,
+		PackagesFor(p, managerType),
+	)
 
 	return Status{
 		Profile: p,
