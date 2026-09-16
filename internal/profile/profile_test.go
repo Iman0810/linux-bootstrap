@@ -166,7 +166,14 @@ func TestProfilePackages(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			actual := PackagesFor(tt.profile, tt.manager)
+			actual, ok := PackagesFor(tt.profile, tt.manager)
+
+			if !ok {
+				t.Fatalf(
+					"expected package mapping for %s",
+					tt.manager,
+				)
+			}
 
 			if len(actual) != len(tt.expected) {
 				t.Fatalf(
@@ -218,7 +225,11 @@ func TestListProfiles(t *testing.T) {
 	}
 }
 func TestPackagesForUnknownManager(t *testing.T) {
-	actual := PackagesFor(Development, packages.Unknown)
+	actual, ok := PackagesFor(Development, packages.Unknown)
+
+	if ok {
+		t.Fatal("expected no package mapping for unknown manager")
+	}
 
 	if len(actual) != 0 {
 		t.Fatalf(

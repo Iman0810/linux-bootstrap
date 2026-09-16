@@ -147,7 +147,20 @@ func runSetup(args []string) {
 		return
 	}
 
-	plan := packages.BuildPlan(manager, selectedProfile.Packages)
+	profilePackages, ok := profile.PackagesFor(
+		selectedProfile,
+		packageManager,
+	)
+
+	if !ok {
+		fmt.Println(
+			"Profile is not supported for package manager:",
+			packageManager,
+		)
+		return
+	}
+
+	plan := packages.BuildPlan(manager, profilePackages)
 
 	fmt.Println("Linux Bootstrap Setup")
 	fmt.Println("----------------------")

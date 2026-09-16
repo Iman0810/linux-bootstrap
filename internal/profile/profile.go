@@ -101,6 +101,8 @@ func Get(name string) (Profile, bool) {
 func List() []Profile {
 	return profiles
 }
-func PackagesFor(p Profile, manager packages.Manager) []string {
-	return p.Packages[manager]
+func PackagesFor(p Profile, manager packages.Manager) ([]string, bool) {
+	packages, ok := p.Packages[manager]
+
+	return packages, ok
 }

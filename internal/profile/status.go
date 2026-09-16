@@ -12,10 +12,15 @@ func CheckStatus(
 	managerType packages.Manager,
 	p Profile,
 ) Status {
-	plan := packages.BuildPlan(
-		manager,
-		PackagesFor(p, managerType),
-	)
+	profilePackages, ok := PackagesFor(p, managerType)
+	if !ok {
+		return Status{
+			Profile: p,
+			Plan:    packages.PackagePlan{},
+		}
+	}
+
+	plan := packages.BuildPlan(manager, profilePackages)
 
 	return Status{
 		Profile: p,
