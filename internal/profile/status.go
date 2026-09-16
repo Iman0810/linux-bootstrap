@@ -11,13 +11,13 @@ func CheckStatus(
 	manager packages.PackageManager,
 	managerType packages.Manager,
 	p Profile,
-) Status {
+) (Status, bool) {
 	profilePackages, ok := PackagesFor(p, managerType)
 	if !ok {
 		return Status{
 			Profile: p,
 			Plan:    packages.PackagePlan{},
-		}
+		}, false
 	}
 
 	plan := packages.BuildPlan(manager, profilePackages)
@@ -25,5 +25,5 @@ func CheckStatus(
 	return Status{
 		Profile: p,
 		Plan:    plan,
-	}
+	}, true
 }

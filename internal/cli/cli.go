@@ -250,20 +250,36 @@ func runStatus() {
 	fmt.Println("--------")
 
 	for _, p := range profile.List() {
-		status := profile.CheckStatus(manager, packageManager, p)
+		status, supported := profile.CheckStatus(
+			manager,
+			packageManager,
+			p,
+		)
+
+		if !supported {
+			fmt.Printf(
+				"⚠ %-15s Unsupported\n",
+				p.Name,
+			)
+			continue
+		}
 
 		if len(status.Plan.Missing) == 0 {
-			fmt.Printf("✓ %-15s Ready\n", p.Name)
-		} else {
 			fmt.Printf(
-				"✗ %-15s Missing %d package(s)\n",
+				"✓ %-15s Ready\n",
 				p.Name,
-				len(status.Plan.Missing),
 			)
+			continue
+		}
 
-			for _, packageName := range status.Plan.Missing {
-				fmt.Println("    -", packageName)
-			}
+		fmt.Printf(
+			"✗ %-15s Missing %d package(s)\n",
+			p.Name,
+			len(status.Plan.Missing),
+		)
+
+		for _, packageName := range status.Plan.Missing {
+			fmt.Println("    -", packageName)
 		}
 	}
 }

@@ -41,7 +41,18 @@ func Run() (Report, error) {
 
 	if manager != nil {
 		for _, p := range profile.List() {
-			status := profile.CheckStatus(manager, packageManager, p)
+			status, supported := profile.CheckStatus(
+				manager,
+				packageManager,
+				p,
+			)
+
+			if !supported {
+				profiles = append(profiles, ProfileStatus{
+					Name: p.Name,
+				})
+				continue
+			}
 
 			profiles = append(profiles, ProfileStatus{
 				Name:    p.Name,
