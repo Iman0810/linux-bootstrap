@@ -32,7 +32,7 @@ func Run() error {
 		runProfiles()
 
 	case "status":
-		runStatus()
+		return runStatus()
 
 	case "doctor":
 		runDoctor()
@@ -227,11 +227,10 @@ func runSetup(args []string) {
 	fmt.Println("\nSetup completed successfully.")
 }
 
-func runStatus() {
+func runStatus() error {
 	osInfo, err := system.GetOSInfo()
 	if err != nil {
-		fmt.Println("Error:", err)
-		return
+		return err
 	}
 
 	packageManager := packages.DetectManager(osInfo)
@@ -241,8 +240,7 @@ func runStatus() {
 	manager := packages.GetPackageManager(packageManager, r)
 
 	if manager == nil {
-		fmt.Println("Unsupported package manager:", packageManager)
-		return
+		return err
 	}
 
 	fmt.Println("Linux Bootstrap Status")
@@ -288,6 +286,7 @@ func runStatus() {
 			fmt.Println("    -", packageName)
 		}
 	}
+	return nil
 }
 
 func runDoctor() {
