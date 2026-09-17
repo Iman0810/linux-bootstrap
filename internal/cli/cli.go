@@ -38,7 +38,7 @@ func Run() error {
 		return runDoctor()
 
 	case "setup":
-		runSetup(os.Args[2:])
+		return runSetup(os.Args[2:])
 
 	default:
 		fmt.Printf("Unknown command: %s\n\n", command)
@@ -106,7 +106,7 @@ func runProfiles() {
 	}
 }
 
-func runSetup(args []string) {
+func runSetup(args []string) error {
 	setupFlags := flag.NewFlagSet("setup", flag.ExitOnError)
 
 	dryRun := setupFlags.Bool(
@@ -125,8 +125,7 @@ func runSetup(args []string) {
 
 	osInfo, err := system.GetOSInfo()
 	if err != nil {
-		fmt.Println("Error:", err)
-		return
+		return err
 	}
 
 	packageManager := packages.DetectManager(osInfo)
@@ -138,14 +137,18 @@ func runSetup(args []string) {
 	manager := packages.GetPackageManager(packageManager, r)
 
 	if manager == nil {
-		fmt.Println("Unsupported package manager:", packageManager)
-		return
+		return fmt.Errorf(
+			"unsupported package manager: %s",
+			packageManager,
+		)
 	}
 
 	selectedProfile, ok := profile.Get(*profileName)
 	if !ok {
-		fmt.Println("Unknown profile:", *profileName)
-		return
+		return fmt.Errorf(
+			"unknown profile: %s",
+			*profileName,
+		)
 	}
 
 	service := setup.Service{
@@ -156,11 +159,11 @@ func runSetup(args []string) {
 
 	result, ok := service.Prepare(selectedProfile)
 	if !ok {
-		fmt.Println(
-			"Profile is not supported for package manager:",
+		return fmt.Errorf(
+			"profile %q is not supported for package manager: %s",
+			selectedProfile.Name,
 			packageManager,
 		)
-		return
 	}
 
 	plan := result.Plan
@@ -187,7 +190,7 @@ func runSetup(args []string) {
 
 	if len(plan.Missing) == 0 {
 		fmt.Println("\nEverything is already installed.")
-		return
+		return nil
 	}
 
 	fmt.Printf("\nPackages to install: %d\n", len(plan.Missing))
@@ -201,30 +204,34 @@ func runSetup(args []string) {
 
 		if !confirmed {
 			fmt.Println("Setup cancelled.")
-			return
+			return nil
 		}
 	}
 
 	execution, err := service.Execute(plan)
 	if err != nil {
-		fmt.Println("Setup failed:", err)
-		return
+		return fmt.Errorf("setup failed: %w", err)
 	}
 
 	if *dryRun {
 		fmt.Println("\nDry-run mode enabled. No changes were made.")
-		return
+		return nil
 	}
 
 	if len(execution.Verified.Missing) > 0 {
 		fmt.Println("\nSetup completed, but some packages are still missing:")
+
 		for _, packageName := range execution.Verified.Missing {
 			fmt.Println("✗", packageName)
 		}
-		return
-	}
 
+		return fmt.Errorf(
+			"setup verification failed: %d package(s) still missing",
+			len(execution.Verified.Missing),
+		)
+	}
 	fmt.Println("\nSetup completed successfully.")
+	return nil
 }
 
 func runStatus() error {
