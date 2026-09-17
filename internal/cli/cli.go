@@ -12,6 +12,7 @@ import (
 	"github.com/Iman0810/linux-bootstrap/internal/prompt"
 	"github.com/Iman0810/linux-bootstrap/internal/recommendation"
 	"github.com/Iman0810/linux-bootstrap/internal/runner"
+	"github.com/Iman0810/linux-bootstrap/internal/setup"
 	"github.com/Iman0810/linux-bootstrap/internal/system"
 )
 
@@ -147,11 +148,13 @@ func runSetup(args []string) {
 		return
 	}
 
-	profilePackages, ok := profile.PackagesFor(
-		selectedProfile,
-		packageManager,
-	)
+	service := setup.Service{
+		Manager:     manager,
+		ManagerType: packageManager,
+		Runner:      r,
+	}
 
+	result, ok := service.Prepare(selectedProfile)
 	if !ok {
 		fmt.Println(
 			"Profile is not supported for package manager:",
@@ -160,7 +163,7 @@ func runSetup(args []string) {
 		return
 	}
 
-	plan := packages.BuildPlan(manager, profilePackages)
+	plan := result.Plan
 
 	fmt.Println("Linux Bootstrap Setup")
 	fmt.Println("----------------------")
@@ -202,15 +205,9 @@ func runSetup(args []string) {
 		}
 	}
 
-	err = manager.Update()
+	err = service.Execute(plan)
 	if err != nil {
-		fmt.Println("Update failed:", err)
-		return
-	}
-
-	err = manager.Install(plan.Missing...)
-	if err != nil {
-		fmt.Println("Installation failed:", err)
+		fmt.Println("Setup failed:", err)
 		return
 	}
 
