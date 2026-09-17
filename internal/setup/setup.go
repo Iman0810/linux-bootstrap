@@ -39,18 +39,32 @@ func (s Service) Prepare(p profile.Profile) (Result, bool) {
 	}, true
 }
 
-func (s Service) Execute(plan packages.PackagePlan) error {
+func (s Service) Execute(plan packages.PackagePlan) (packages.PackagePlan, error) {
 	if len(plan.Missing) == 0 {
-		return nil
+		return plan, nil
 	}
 
 	if err := s.Manager.Update(); err != nil {
-		return err
+		return plan, err
 	}
 
 	if err := s.Manager.Install(plan.Missing...); err != nil {
-		return err
+		return plan, err
 	}
 
-	return nil
+	if s.Runner.DryRun {
+		return plan, nil
+	}
+
+	allPackages := append(
+		append([]string{}, plan.Installed...),
+		plan.Missing...,
+	)
+
+	verified := packages.BuildPlan(
+		s.Manager,
+		allPackages,
+	)
+
+	return verified, nil
 }

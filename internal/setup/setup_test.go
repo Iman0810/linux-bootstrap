@@ -23,6 +23,11 @@ func (m *mockPackageManager) Update() error {
 func (m *mockPackageManager) Install(packages ...string) error {
 	m.installCalled = true
 	m.installedArgs = packages
+
+	for _, packageName := range packages {
+		m.installed[packageName] = true
+	}
+
 	return nil
 }
 
@@ -110,10 +115,24 @@ func TestExecute(t *testing.T) {
 		Missing:   []string{"curl"},
 	}
 
-	err := service.Execute(plan)
+	verified, err := service.Execute(plan)
 
 	if err != nil {
 		t.Fatalf("expected execute to succeed, got %v", err)
+	}
+
+	if len(verified.Missing) != 0 {
+		t.Fatalf(
+			"expected no missing packages after verification, got %v",
+			verified.Missing,
+		)
+	}
+
+	if len(verified.Installed) != 2 {
+		t.Fatalf(
+			"expected 2 installed packages after verification, got %d",
+			len(verified.Installed),
+		)
 	}
 
 	if !manager.updateCalled {
@@ -157,10 +176,17 @@ func TestExecuteNothingToInstall(t *testing.T) {
 		Missing:   []string{},
 	}
 
-	err := service.Execute(plan)
+	verified, err := service.Execute(plan)
 
 	if err != nil {
 		t.Fatalf("expected execute to succeed, got %v", err)
+	}
+
+	if len(verified.Missing) != 0 {
+		t.Fatalf(
+			"expected no missing packages, got %v",
+			verified.Missing,
+		)
 	}
 
 	if manager.updateCalled {
@@ -169,5 +195,36 @@ func TestExecuteNothingToInstall(t *testing.T) {
 
 	if manager.installCalled {
 		t.Fatal("expected Install not to be called")
+	}
+}
+func TestExecuteVerificationFailure(t *testing.T) {
+	manager := &mockPackageManager{
+		installed: map[string]bool{
+			"git": true,
+		},
+	}
+
+	service := Service{
+		Manager:     manager,
+		ManagerType: packages.APT,
+		Runner:      runner.Runner{},
+	}
+
+	plan := packages.PackagePlan{
+		Installed: []string{"git"},
+		Missing:   []string{"curl"},
+	}
+
+	verified, err := service.Execute(plan)
+
+	if err != nil {
+		t.Fatalf("expected execute to succeed, got %v", err)
+	}
+
+	if len(verified.Missing) != 0 {
+		t.Fatalf(
+			"expected curl to be installed by mock, got missing %v",
+			verified.Missing,
+		)
 	}
 }

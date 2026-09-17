@@ -205,7 +205,7 @@ func runSetup(args []string) {
 		}
 	}
 
-	err = service.Execute(plan)
+	verified, err := service.Execute(plan)
 	if err != nil {
 		fmt.Println("Setup failed:", err)
 		return
@@ -213,9 +213,18 @@ func runSetup(args []string) {
 
 	if *dryRun {
 		fmt.Println("\nDry-run mode enabled. No changes were made.")
-	} else {
-		fmt.Println("\nSetup completed successfully.")
+		return
 	}
+
+	if len(verified.Missing) > 0 {
+		fmt.Println("\nSetup completed, but some packages are still missing:")
+		for _, packageName := range verified.Missing {
+			fmt.Println("✗", packageName)
+		}
+		return
+	}
+
+	fmt.Println("\nSetup completed successfully.")
 }
 
 func runStatus() {
