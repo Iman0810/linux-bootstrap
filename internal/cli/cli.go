@@ -35,7 +35,7 @@ func Run() error {
 		return runStatus()
 
 	case "doctor":
-		runDoctor()
+		return runDoctor()
 
 	case "setup":
 		runSetup(os.Args[2:])
@@ -289,11 +289,10 @@ func runStatus() error {
 	return nil
 }
 
-func runDoctor() {
+func runDoctor() error {
 	report, err := doctor.Run()
 	if err != nil {
-		fmt.Println("Error:", err)
-		return
+		return err
 	}
 
 	fmt.Println("Linux Bootstrap Doctor")
@@ -361,7 +360,7 @@ func runDoctor() {
 
 	if len(recommendations) == 0 {
 		fmt.Println("✓ No issues found.")
-		return
+		return nil
 	}
 
 	for _, rec := range recommendations {
@@ -370,6 +369,7 @@ func runDoctor() {
 		fmt.Println(" ", rec.Description)
 		fmt.Println(" ", rec.Command)
 	}
+	return nil
 }
 
 func printUsage() {
