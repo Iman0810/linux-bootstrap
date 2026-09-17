@@ -1,6 +1,7 @@
 package setup
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/Iman0810/linux-bootstrap/internal/packages"
@@ -13,16 +14,22 @@ type mockPackageManager struct {
 	updateCalled  bool
 	installCalled bool
 	installedArgs []string
+	updateErr     error
+	installErr    error
 }
 
 func (m *mockPackageManager) Update() error {
 	m.updateCalled = true
-	return nil
+	return m.updateErr
 }
 
 func (m *mockPackageManager) Install(packages ...string) error {
 	m.installCalled = true
 	m.installedArgs = packages
+
+	if m.installErr != nil {
+		return m.installErr
+	}
 
 	for _, packageName := range packages {
 		m.installed[packageName] = true
@@ -226,5 +233,71 @@ func TestExecuteVerificationFailure(t *testing.T) {
 			"expected curl to be installed by mock, got missing %v",
 			verified.Missing,
 		)
+	}
+}
+func TestExecuteUpdateFailure(t *testing.T) {
+	manager := &mockPackageManager{
+		installed: map[string]bool{
+			"git": true,
+		},
+		updateErr: fmt.Errorf("update failed"),
+	}
+
+	service := Service{
+		Manager:     manager,
+		ManagerType: packages.APT,
+		Runner:      runner.Runner{},
+	}
+
+	plan := packages.PackagePlan{
+		Installed: []string{"git"},
+		Missing:   []string{"curl"},
+	}
+
+	_, err := service.Execute(plan)
+
+	if err == nil {
+		t.Fatal("expected execute to fail")
+	}
+
+	if !manager.updateCalled {
+		t.Fatal("expected Update to be called")
+	}
+
+	if manager.installCalled {
+		t.Fatal("expected Install not to be called after Update failure")
+	}
+}
+func TestExecuteInstallFailure(t *testing.T) {
+	manager := &mockPackageManager{
+		installed: map[string]bool{
+			"git": true,
+		},
+		installErr: fmt.Errorf("installation failed"),
+	}
+
+	service := Service{
+		Manager:     manager,
+		ManagerType: packages.APT,
+		Runner:      runner.Runner{},
+	}
+
+	plan := packages.PackagePlan{
+		Installed: []string{"git"},
+		Missing:   []string{"curl"},
+	}
+
+	_, err := service.Execute(plan)
+
+	if err == nil {
+		t.Fatal("expected execute to fail")
+	}
+
+	if !manager.updateCalled {
+		t.Fatal("expected Update to be called")
+	}
+
+	if !manager.installCalled {
+		t.Fatal("expected Install to be called")
 	}
 }
