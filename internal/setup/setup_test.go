@@ -122,23 +122,23 @@ func TestExecute(t *testing.T) {
 		Missing:   []string{"curl"},
 	}
 
-	verified, err := service.Execute(plan)
+	execution, err := service.Execute(plan)
 
 	if err != nil {
 		t.Fatalf("expected execute to succeed, got %v", err)
 	}
 
-	if len(verified.Missing) != 0 {
+	if len(execution.Verified.Missing) != 0 {
 		t.Fatalf(
 			"expected no missing packages after verification, got %v",
-			verified.Missing,
+			execution.Verified.Missing,
 		)
 	}
 
-	if len(verified.Installed) != 2 {
+	if len(execution.Verified.Installed) != 2 {
 		t.Fatalf(
 			"expected 2 installed packages after verification, got %d",
-			len(verified.Installed),
+			len(execution.Verified.Installed),
 		)
 	}
 
@@ -183,16 +183,16 @@ func TestExecuteNothingToInstall(t *testing.T) {
 		Missing:   []string{},
 	}
 
-	verified, err := service.Execute(plan)
+	execution, err := service.Execute(plan)
 
 	if err != nil {
 		t.Fatalf("expected execute to succeed, got %v", err)
 	}
 
-	if len(verified.Missing) != 0 {
+	if len(execution.Verified.Missing) != 0 {
 		t.Fatalf(
 			"expected no missing packages, got %v",
-			verified.Missing,
+			execution.Verified.Missing,
 		)
 	}
 
@@ -204,7 +204,8 @@ func TestExecuteNothingToInstall(t *testing.T) {
 		t.Fatal("expected Install not to be called")
 	}
 }
-func TestExecuteVerificationFailure(t *testing.T) {
+
+func TestExecuteVerification(t *testing.T) {
 	manager := &mockPackageManager{
 		installed: map[string]bool{
 			"git": true,
@@ -222,19 +223,27 @@ func TestExecuteVerificationFailure(t *testing.T) {
 		Missing:   []string{"curl"},
 	}
 
-	verified, err := service.Execute(plan)
+	execution, err := service.Execute(plan)
 
 	if err != nil {
 		t.Fatalf("expected execute to succeed, got %v", err)
 	}
 
-	if len(verified.Missing) != 0 {
+	if len(execution.Verified.Missing) != 0 {
 		t.Fatalf(
 			"expected curl to be installed by mock, got missing %v",
-			verified.Missing,
+			execution.Verified.Missing,
+		)
+	}
+
+	if len(execution.Verified.Installed) != 2 {
+		t.Fatalf(
+			"expected 2 verified installed packages, got %d",
+			len(execution.Verified.Installed),
 		)
 	}
 }
+
 func TestExecuteUpdateFailure(t *testing.T) {
 	manager := &mockPackageManager{
 		installed: map[string]bool{
@@ -268,6 +277,7 @@ func TestExecuteUpdateFailure(t *testing.T) {
 		t.Fatal("expected Install not to be called after Update failure")
 	}
 }
+
 func TestExecuteInstallFailure(t *testing.T) {
 	manager := &mockPackageManager{
 		installed: map[string]bool{

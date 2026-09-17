@@ -13,7 +13,11 @@ type Service struct {
 }
 
 type Result struct {
-	Profile  profile.Profile
+	Profile profile.Profile
+	Plan    packages.PackagePlan
+}
+
+type ExecutionResult struct {
 	Plan     packages.PackagePlan
 	Verified packages.PackagePlan
 }
@@ -39,21 +43,30 @@ func (s Service) Prepare(p profile.Profile) (Result, bool) {
 	}, true
 }
 
-func (s Service) Execute(plan packages.PackagePlan) (packages.PackagePlan, error) {
+func (s Service) Execute(plan packages.PackagePlan) (ExecutionResult, error) {
 	if len(plan.Missing) == 0 {
-		return plan, nil
+		return ExecutionResult{
+			Plan:     plan,
+			Verified: plan,
+		}, nil
 	}
 
 	if err := s.Manager.Update(); err != nil {
-		return plan, err
+		return ExecutionResult{
+			Plan: plan,
+		}, err
 	}
 
 	if err := s.Manager.Install(plan.Missing...); err != nil {
-		return plan, err
+		return ExecutionResult{
+			Plan: plan,
+		}, err
 	}
 
 	if s.Runner.DryRun {
-		return plan, nil
+		return ExecutionResult{
+			Plan: plan,
+		}, nil
 	}
 
 	allPackages := append(
@@ -66,5 +79,8 @@ func (s Service) Execute(plan packages.PackagePlan) (packages.PackagePlan, error
 		allPackages,
 	)
 
-	return verified, nil
+	return ExecutionResult{
+		Plan:     plan,
+		Verified: verified,
+	}, nil
 }

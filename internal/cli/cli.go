@@ -205,7 +205,7 @@ func runSetup(args []string) {
 		}
 	}
 
-	verified, err := service.Execute(plan)
+	execution, err := service.Execute(plan)
 	if err != nil {
 		fmt.Println("Setup failed:", err)
 		return
@@ -216,9 +216,9 @@ func runSetup(args []string) {
 		return
 	}
 
-	if len(verified.Missing) > 0 {
+	if len(execution.Verified.Missing) > 0 {
 		fmt.Println("\nSetup completed, but some packages are still missing:")
-		for _, packageName := range verified.Missing {
+		for _, packageName := range execution.Verified.Missing {
 			fmt.Println("✗", packageName)
 		}
 		return
