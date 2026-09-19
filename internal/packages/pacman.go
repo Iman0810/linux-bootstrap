@@ -3,7 +3,7 @@ package packages
 import "github.com/Iman0810/linux-bootstrap/internal/runner"
 
 type PacmanManager struct {
-	Runner runner.Runner
+	Runner runner.Executor
 }
 
 func (p PacmanManager) Update() error {

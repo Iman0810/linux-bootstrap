@@ -6,6 +6,11 @@ import (
 	"os/exec"
 )
 
+type Executor interface {
+	Run(command string, args ...string) error
+	Output(command string, args ...string) (string, error)
+}
+
 type Runner struct {
 	DryRun bool
 }

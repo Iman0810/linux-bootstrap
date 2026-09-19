@@ -3,7 +3,7 @@ package packages
 import "github.com/Iman0810/linux-bootstrap/internal/runner"
 
 type DnfManager struct {
-	Runner runner.Runner
+	Runner runner.Executor
 }
 
 func (d DnfManager) Update() error {

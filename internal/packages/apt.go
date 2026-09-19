@@ -5,7 +5,7 @@ import (
 )
 
 type AptManager struct {
-	Runner runner.Runner
+	Runner runner.Executor
 }
 
 func (a AptManager) Update() error {
