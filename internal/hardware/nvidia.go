@@ -1,9 +1,6 @@
 package hardware
 
-import (
-	"os/exec"
-	"strings"
-)
+import "strings"
 
 type NvidiaStatus struct {
 	Installed bool
@@ -11,6 +8,13 @@ type NvidiaStatus struct {
 }
 
 func DetectNvidiaDriver(gpus []GPU) NvidiaStatus {
+	return DetectNvidiaDriverWithRunner(gpus, OSCommandRunner{})
+}
+
+func DetectNvidiaDriverWithRunner(
+	gpus []GPU,
+	runner CommandRunner,
+) NvidiaStatus {
 	hasNvidia := false
 
 	for _, gpu := range gpus {
@@ -24,20 +28,19 @@ func DetectNvidiaDriver(gpus []GPU) NvidiaStatus {
 		return NvidiaStatus{}
 	}
 
-	cmd := exec.Command(
+	output, err := runner.Output(
 		"nvidia-smi",
 		"--query-gpu=driver_version",
 		"--format=csv,noheader",
 	)
 
-	output, err := cmd.Output()
 	if err != nil {
 		return NvidiaStatus{
 			Installed: false,
 		}
 	}
 
-	return ParseNvidiaDriver(string(output))
+	return ParseNvidiaDriver(output)
 }
 
 func ParseNvidiaDriver(output string) NvidiaStatus {

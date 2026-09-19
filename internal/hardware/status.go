@@ -7,7 +7,11 @@ type HardwareStatus struct {
 }
 
 func DetectHardware() HardwareStatus {
-	gpus := DetectGPUs()
+	return DetectHardwareWithRunner(OSCommandRunner{})
+}
+
+func DetectHardwareWithRunner(runner CommandRunner) HardwareStatus {
+	gpus := DetectGPUsWithRunner(runner)
 
 	status := HardwareStatus{
 		GPUs: gpus,
@@ -15,7 +19,7 @@ func DetectHardware() HardwareStatus {
 
 	for _, gpu := range gpus {
 		if gpu.Vendor == NVIDIA {
-			nvidia := DetectNvidiaDriver(gpus)
+			nvidia := DetectNvidiaDriverWithRunner(gpus, runner)
 
 			status.Nvidia = &nvidia
 			status.NvidiaFound = true

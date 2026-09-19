@@ -19,15 +19,28 @@ type GPU struct {
 	Name   string
 }
 
-func DetectGPUs() []GPU {
-	cmd := exec.Command("lspci")
+type CommandRunner interface {
+	Output(command string, args ...string) (string, error)
+}
 
-	output, err := cmd.Output()
+type OSCommandRunner struct{}
+
+func (OSCommandRunner) Output(command string, args ...string) (string, error) {
+	output, err := exec.Command(command, args...).Output()
+	return string(output), err
+}
+
+func DetectGPUs() []GPU {
+	return DetectGPUsWithRunner(OSCommandRunner{})
+}
+
+func DetectGPUsWithRunner(runner CommandRunner) []GPU {
+	output, err := runner.Output("lspci")
 	if err != nil {
 		return []GPU{}
 	}
 
-	return ParseGPUs(string(output))
+	return ParseGPUs(output)
 }
 
 func ParseGPUs(output string) []GPU {
