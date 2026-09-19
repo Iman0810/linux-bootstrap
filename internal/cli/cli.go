@@ -122,11 +122,12 @@ func runSetup(args []string) error {
 		"essentials",
 		"Profile to install",
 	)
-
 	if err := setupFlags.Parse(args); err != nil {
+		if err == flag.ErrHelp {
+			return nil
+		}
 		return err
 	}
-
 	osInfo, err := system.GetOSInfo()
 	if err != nil {
 		return err
