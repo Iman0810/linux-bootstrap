@@ -107,7 +107,7 @@ func runProfiles() {
 }
 
 func runSetup(args []string) error {
-	setupFlags := flag.NewFlagSet("setup", flag.ExitOnError)
+	setupFlags := flag.NewFlagSet("setup", flag.ContinueOnError)
 
 	dryRun := setupFlags.Bool(
 		"dry-run",
@@ -121,7 +121,9 @@ func runSetup(args []string) error {
 		"Profile to install",
 	)
 
-	setupFlags.Parse(args)
+	if err := setupFlags.Parse(args); err != nil {
+		return err
+	}
 
 	osInfo, err := system.GetOSInfo()
 	if err != nil {
