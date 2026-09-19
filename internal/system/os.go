@@ -2,6 +2,7 @@ package system
 
 import (
 	"bufio"
+	"io"
 	"os"
 	"strings"
 )
@@ -20,9 +21,13 @@ func GetOSInfo() (OSInfo, error) {
 	}
 	defer file.Close()
 
+	return parseOSReleaseReader(file)
+}
+
+func parseOSReleaseReader(reader io.Reader) (OSInfo, error) {
 	var builder strings.Builder
 
-	scanner := bufio.NewScanner(file)
+	scanner := bufio.NewScanner(reader)
 
 	for scanner.Scan() {
 		builder.WriteString(scanner.Text())

@@ -1,6 +1,10 @@
 package system
 
-import "testing"
+import (
+	"fmt"
+	"strings"
+	"testing"
+)
 
 func TestParseOSReleasePopOS(t *testing.T) {
 	input := `NAME="Pop!_OS"
@@ -141,5 +145,46 @@ func TestParseOSReleaseEmptyInput(t *testing.T) {
 
 	if got != (OSInfo{}) {
 		t.Fatalf("expected empty OSInfo, got %+v", got)
+	}
+}
+func TestParseOSReleaseReader(t *testing.T) {
+	input := `NAME="Test Linux"
+VERSION="1.0"
+ID=test
+ID_LIKE=debian
+`
+
+	got, err := parseOSReleaseReader(strings.NewReader(input))
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	expected := OSInfo{
+		Name:    "Test Linux",
+		Version: "1.0",
+		ID:      "test",
+		IDLike:  "debian",
+	}
+
+	if got != expected {
+		t.Fatalf("unexpected OS info: got %+v, want %+v", got, expected)
+	}
+}
+
+type errorReader struct{}
+
+func (errorReader) Read([]byte) (int, error) {
+	return 0, fmt.Errorf("read failed")
+}
+
+func TestParseOSReleaseReaderError(t *testing.T) {
+	_, err := parseOSReleaseReader(errorReader{})
+
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+
+	if err.Error() != "read failed" {
+		t.Fatalf("expected read failed error, got %v", err)
 	}
 }
