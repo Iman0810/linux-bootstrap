@@ -281,7 +281,5 @@ func TestDetectHardwareWithRunnerNoNvidia(t *testing.T) {
 }
 
 func TestDetectHardwareWithRunnerNvidiaDriverFailure(t *testing.T) {
-	// Our current fake runner returns one output for every command,
-	// so this test will be handled separately if we need command-specific
-	// behavior.
+	
 }

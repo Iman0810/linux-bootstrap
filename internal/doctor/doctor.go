@@ -25,17 +25,32 @@ type ProfileStatus struct {
 }
 
 func Run() (Report, error) {
-	osInfo, err := system.GetOSInfo()
+	r := runner.Runner{}
+
+	return RunWithDependencies(
+		system.GetOSInfo,
+		hardware.DetectHardware,
+		func(manager packages.Manager) packages.PackageManager {
+			return packages.GetPackageManager(manager, r)
+		},
+	)
+}
+
+func RunWithDependencies(
+	getOSInfo func() (system.OSInfo, error),
+	detectHardware func() hardware.HardwareStatus,
+	getPackageManager func(packages.Manager) packages.PackageManager,
+) (Report, error) {
+	osInfo, err := getOSInfo()
 	if err != nil {
 		return Report{}, err
 	}
 
 	packageManager := packages.DetectManager(osInfo)
 
-	r := runner.Runner{}
-	manager := packages.GetPackageManager(packageManager, r)
+	hardwareStatus := detectHardware()
 
-	hardwareStatus := hardware.DetectHardware()
+	manager := getPackageManager(packageManager)
 
 	var profiles []ProfileStatus
 
