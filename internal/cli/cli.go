@@ -52,7 +52,17 @@ func RunArgs(args []string) error {
 	return nil
 }
 func runInfo() error {
-	osInfo, err := system.GetOSInfo()
+	return runInfoWithDependencies(
+		system.GetOSInfo,
+		hardware.DetectHardware,
+	)
+}
+
+func runInfoWithDependencies(
+	getOSInfo func() (system.OSInfo, error),
+	detectHardware func() hardware.HardwareStatus,
+) error {
+	osInfo, err := getOSInfo()
 	if err != nil {
 		return err
 	}
@@ -71,7 +81,7 @@ func runInfo() error {
 	fmt.Println("Hardware")
 	fmt.Println("--------")
 
-	hardwareStatus := hardware.DetectHardware()
+	hardwareStatus := detectHardware()
 
 	if len(hardwareStatus.GPUs) == 0 {
 		fmt.Println("GPU: Not detected")
@@ -93,6 +103,7 @@ func runInfo() error {
 			fmt.Println("Status:", "Not detected")
 		}
 	}
+
 	return nil
 }
 
@@ -109,6 +120,21 @@ func runProfiles() {
 }
 
 func runSetup(args []string) error {
+	return runSetupWithDependencies(
+		args,
+		system.GetOSInfo,
+		func(managerType packages.Manager, r runner.Runner) packages.PackageManager {
+			return packages.GetPackageManager(managerType, r)
+		},
+		prompt.Confirm,
+	)
+}
+func runSetupWithDependencies(
+	args []string,
+	getOSInfo func() (system.OSInfo, error),
+	getPackageManager func(packages.Manager, runner.Runner) packages.PackageManager,
+	confirm func(string) bool,
+) error {
 	setupFlags := flag.NewFlagSet("setup", flag.ContinueOnError)
 
 	dryRun := setupFlags.Bool(
@@ -122,13 +148,15 @@ func runSetup(args []string) error {
 		"essentials",
 		"Profile to install",
 	)
+
 	if err := setupFlags.Parse(args); err != nil {
 		if err == flag.ErrHelp {
 			return nil
 		}
 		return err
 	}
-	osInfo, err := system.GetOSInfo()
+
+	osInfo, err := getOSInfo()
 	if err != nil {
 		return err
 	}
@@ -139,7 +167,7 @@ func runSetup(args []string) error {
 		DryRun: *dryRun,
 	}
 
-	manager := packages.GetPackageManager(packageManager, r)
+	manager := getPackageManager(packageManager, r)
 
 	if manager == nil {
 		return fmt.Errorf(
@@ -203,7 +231,7 @@ func runSetup(args []string) error {
 	if *dryRun {
 		fmt.Println("Dry-run mode enabled. No changes will be made.")
 	} else {
-		confirmed := prompt.Confirm(
+		confirmed := confirm(
 			"These operations will modify your system. Continue?",
 		)
 
@@ -235,24 +263,38 @@ func runSetup(args []string) error {
 			len(execution.Verified.Missing),
 		)
 	}
+
 	fmt.Println("\nSetup completed successfully.")
 	return nil
 }
-
 func runStatus() error {
-	osInfo, err := system.GetOSInfo()
+	return runStatusWithDependencies(
+		system.GetOSInfo,
+		func(managerType packages.Manager) packages.PackageManager {
+			r := runner.Runner{}
+			return packages.GetPackageManager(managerType, r)
+		},
+	)
+}
+
+func runStatusWithDependencies(
+	getOSInfo func() (system.OSInfo, error),
+	getPackageManager func(packages.Manager) packages.PackageManager,
+) error {
+	osInfo, err := getOSInfo()
 	if err != nil {
 		return err
 	}
 
 	packageManager := packages.DetectManager(osInfo)
 
-	r := runner.Runner{}
-
-	manager := packages.GetPackageManager(packageManager, r)
+	manager := getPackageManager(packageManager)
 
 	if manager == nil {
-		return err
+		return fmt.Errorf(
+			"unsupported package manager: %s",
+			packageManager,
+		)
 	}
 
 	fmt.Println("Linux Bootstrap Status")
@@ -298,11 +340,18 @@ func runStatus() error {
 			fmt.Println("    -", packageName)
 		}
 	}
+
 	return nil
 }
 
 func runDoctor() error {
-	report, err := doctor.Run()
+	return runDoctorWithDependencies(doctor.Run)
+}
+
+func runDoctorWithDependencies(
+	runDoctor func() (doctor.Report, error),
+) error {
+	report, err := runDoctor()
 	if err != nil {
 		return err
 	}
@@ -364,6 +413,7 @@ func runDoctor() error {
 			}
 		}
 	}
+
 	recommendations := recommendation.Generate(report)
 
 	fmt.Println()
@@ -381,6 +431,7 @@ func runDoctor() error {
 		fmt.Println(" ", rec.Description)
 		fmt.Println(" ", rec.Command)
 	}
+
 	return nil
 }
 
