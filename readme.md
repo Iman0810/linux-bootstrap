@@ -25,13 +25,13 @@ Currently supported:
 * [x] Post-installation verification
 * [x] DNF Initial implementation
 * [x] pacman Initial implementation
+* [x] Unit testing
 
 Currently tested on:
 
 * Pop!_OS 24.04
 
 ## Planned Features
-* [inprogress...] Unit testing
 * [ ] Development environment setup
 * [ ] Docker setup
 * [ ] System diagnostics
