@@ -12,18 +12,36 @@ import (
 )
 
 type statusFakePackageManager struct {
-	installed map[string]bool
+	installed         map[string]bool
+	updateErr         error
+	installErr        error
+	updated           bool
+	installedPackages []string
 }
 
-func (f statusFakePackageManager) Update() error {
+func (f *statusFakePackageManager) Update() error {
+	f.updated = true
+	return f.updateErr
+}
+
+func (f *statusFakePackageManager) Install(packages ...string) error {
+	if f.installErr != nil {
+		return f.installErr
+	}
+
+	f.installedPackages = append(
+		f.installedPackages,
+		packages...,
+	)
+
+	for _, packageName := range packages {
+		f.installed[packageName] = true
+	}
+
 	return nil
 }
 
-func (f statusFakePackageManager) Install(packages ...string) error {
-	return nil
-}
-
-func (f statusFakePackageManager) IsInstalled(packageName string) bool {
+func (f *statusFakePackageManager) IsInstalled(packageName string) bool {
 	return f.installed[packageName]
 }
 
@@ -209,7 +227,7 @@ func TestRunStatusWithDependenciesReadyProfile(t *testing.T) {
 	}
 
 	getPackageManager := func(managerType packages.Manager) packages.PackageManager {
-		return statusFakePackageManager{
+		return &statusFakePackageManager{
 			installed: map[string]bool{
 				"git":             true,
 				"curl":            true,
@@ -241,7 +259,7 @@ func TestRunStatusWithDependenciesMissingPackages(t *testing.T) {
 	}
 
 	getPackageManager := func(managerType packages.Manager) packages.PackageManager {
-		return statusFakePackageManager{
+		return &statusFakePackageManager{
 			installed: map[string]bool{
 				"git":   true,
 				"curl":  true,
@@ -270,7 +288,7 @@ func TestRunStatusWithDependenciesUnsupportedProfileMapping(t *testing.T) {
 	}
 
 	getPackageManager := func(managerType packages.Manager) packages.PackageManager {
-		return statusFakePackageManager{
+		return &statusFakePackageManager{
 			installed: map[string]bool{},
 		}
 	}
@@ -465,7 +483,7 @@ func TestRunSetupWithDependenciesUnknownProfile(t *testing.T) {
 		managerType packages.Manager,
 		r runner.Runner,
 	) packages.PackageManager {
-		return statusFakePackageManager{
+		return &statusFakePackageManager{
 			installed: map[string]bool{},
 		}
 	}
@@ -497,7 +515,7 @@ func TestRunSetupWithDependenciesUnsupportedProfileMapping(t *testing.T) {
 		managerType packages.Manager,
 		r runner.Runner,
 	) packages.PackageManager {
-		return statusFakePackageManager{
+		return &statusFakePackageManager{
 			installed: map[string]bool{},
 		}
 	}
@@ -529,7 +547,7 @@ func TestRunSetupWithDependenciesDryRun(t *testing.T) {
 		managerType packages.Manager,
 		r runner.Runner,
 	) packages.PackageManager {
-		return statusFakePackageManager{
+		return &statusFakePackageManager{
 			installed: map[string]bool{},
 		}
 	}
@@ -565,7 +583,7 @@ func TestRunSetupWithDependenciesEverythingInstalled(t *testing.T) {
 		managerType packages.Manager,
 		r runner.Runner,
 	) packages.PackageManager {
-		return statusFakePackageManager{
+		return &statusFakePackageManager{
 			installed: map[string]bool{
 				"git":   true,
 				"curl":  true,
@@ -586,5 +604,185 @@ func TestRunSetupWithDependenciesEverythingInstalled(t *testing.T) {
 
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
+	}
+}
+func TestRunSetupWithDependenciesCancelled(t *testing.T) {
+	getOSInfo := func() (system.OSInfo, error) {
+		return system.OSInfo{
+			Name:    "Test Linux",
+			Version: "1.0",
+			ID:      "ubuntu",
+		}, nil
+	}
+
+	getPackageManager := func(
+		managerType packages.Manager,
+		r runner.Runner,
+	) packages.PackageManager {
+		return &statusFakePackageManager{
+			installed: map[string]bool{},
+		}
+	}
+
+	err := runSetupWithDependencies(
+		[]string{"--profile", "essentials"},
+		getOSInfo,
+		getPackageManager,
+		func(string) bool {
+			return false
+		},
+	)
+
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+}
+func TestRunSetupWithDependenciesSuccess(t *testing.T) {
+	getOSInfo := func() (system.OSInfo, error) {
+		return system.OSInfo{
+			Name:    "Test Linux",
+			Version: "1.0",
+			ID:      "ubuntu",
+		}, nil
+	}
+
+	var fake *statusFakePackageManager
+
+	getPackageManager := func(
+		managerType packages.Manager,
+		r runner.Runner,
+	) packages.PackageManager {
+		fake = &statusFakePackageManager{
+			installed: map[string]bool{},
+		}
+
+		return fake
+	}
+
+	err := runSetupWithDependencies(
+		[]string{"--profile", "essentials"},
+		getOSInfo,
+		getPackageManager,
+		func(string) bool {
+			return true
+		},
+	)
+
+	if err != nil {
+		t.Fatalf("expected setup to succeed, got %v", err)
+	}
+
+	if !fake.updated {
+		t.Fatal("expected package manager Update to be called")
+	}
+
+	if len(fake.installedPackages) != 4 {
+		t.Fatalf(
+			"expected 4 packages to be installed, got %d",
+			len(fake.installedPackages),
+		)
+	}
+
+	for _, packageName := range []string{
+		"git",
+		"curl",
+		"wget",
+		"unzip",
+	} {
+		if !fake.installed[packageName] {
+			t.Errorf("expected %s to be installed", packageName)
+		}
+	}
+}
+func TestRunSetupWithDependenciesUpdateFailure(t *testing.T) {
+	expectedErr := errors.New("update failed")
+
+	getOSInfo := func() (system.OSInfo, error) {
+		return system.OSInfo{
+			Name:    "Test Linux",
+			Version: "1.0",
+			ID:      "ubuntu",
+		}, nil
+	}
+
+	var manager *statusFakePackageManager
+
+	getPackageManager := func(
+		managerType packages.Manager,
+		r runner.Runner,
+	) packages.PackageManager {
+		manager = &statusFakePackageManager{
+			installed: map[string]bool{},
+			updateErr: expectedErr,
+		}
+
+		return manager
+	}
+
+	err := runSetupWithDependencies(
+		[]string{"--profile", "essentials"},
+		getOSInfo,
+		getPackageManager,
+		func(string) bool {
+			return true
+		},
+	)
+
+	if !errors.Is(err, expectedErr) {
+		t.Fatalf("expected %v, got %v", expectedErr, err)
+	}
+
+	if !manager.updated {
+		t.Fatal("expected Update to be called")
+	}
+
+	if len(manager.installedPackages) != 0 {
+		t.Fatal("Install should not be called after Update fails")
+	}
+}
+func TestRunSetupWithDependenciesInstallFailure(t *testing.T) {
+	expectedErr := errors.New("install failed")
+
+	getOSInfo := func() (system.OSInfo, error) {
+		return system.OSInfo{
+			Name:    "Test Linux",
+			Version: "1.0",
+			ID:      "ubuntu",
+		}, nil
+	}
+
+	var manager *statusFakePackageManager
+
+	getPackageManager := func(
+		managerType packages.Manager,
+		r runner.Runner,
+	) packages.PackageManager {
+		manager = &statusFakePackageManager{
+			installed:  map[string]bool{},
+			installErr: expectedErr,
+		}
+
+		return manager
+	}
+
+	err := runSetupWithDependencies(
+		[]string{"--profile", "essentials"},
+		getOSInfo,
+		getPackageManager,
+		func(string) bool {
+			return true
+		},
+	)
+
+	if !errors.Is(err, expectedErr) {
+		t.Fatalf("expected %v, got %v", expectedErr, err)
+	}
+
+	if !manager.updated {
+		t.Fatal("expected Update to be called")
+	}
+
+	if len(manager.installedPackages) != 0 {
+		t.Fatal("expected installedPackages to remain empty")
 	}
 }
