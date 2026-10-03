@@ -474,3 +474,43 @@ func TestPacmanManagerIsNotInstalled(t *testing.T) {
 		t.Fatal("expected package to not be installed")
 	}
 }
+func TestManagerString(t *testing.T) {
+	tests := []struct {
+		name    string
+		manager Manager
+		want    string
+	}{
+		{
+			name:    "apt",
+			manager: APT,
+			want:    "apt",
+		},
+		{
+			name:    "dnf",
+			manager: DNF,
+			want:    "dnf",
+		},
+		{
+			name:    "pacman",
+			manager: Pacman,
+			want:    "pacman",
+		},
+		{
+			name:    "unknown",
+			manager: Unknown,
+			want:    `"unknown"`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.manager.String(); got != tt.want {
+				t.Fatalf(
+					"expected %q, got %q",
+					tt.want,
+					got,
+				)
+			}
+		})
+	}
+}
