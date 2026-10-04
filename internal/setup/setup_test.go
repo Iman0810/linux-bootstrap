@@ -311,3 +311,52 @@ func TestExecuteInstallFailure(t *testing.T) {
 		t.Fatal("expected Install to be called")
 	}
 }
+func TestExecuteDryRun(t *testing.T) {
+	manager := &mockPackageManager{
+		installed: map[string]bool{
+			"git": true,
+		},
+	}
+
+	service := Service{
+		Manager:     manager,
+		ManagerType: packages.APT,
+		Runner: runner.Runner{
+			DryRun: true,
+		},
+	}
+
+	plan := packages.PackagePlan{
+		Installed: []string{"git"},
+		Missing:   []string{"curl"},
+	}
+
+	execution, err := service.Execute(plan)
+
+	if err != nil {
+		t.Fatalf("expected dry-run to succeed, got %v", err)
+	}
+
+	if !manager.updateCalled {
+		t.Fatal("expected Update to be called")
+	}
+
+	if !manager.installCalled {
+		t.Fatal("expected Install to be called")
+	}
+
+	if len(execution.Plan.Missing) != 1 {
+		t.Fatalf(
+			"expected 1 missing package in execution plan, got %d",
+			len(execution.Plan.Missing),
+		)
+	}
+
+	if len(execution.Verified.Installed) != 0 {
+		t.Fatal("expected no verification during dry-run")
+	}
+
+	if len(execution.Verified.Missing) != 0 {
+		t.Fatal("expected no verification during dry-run")
+	}
+}
