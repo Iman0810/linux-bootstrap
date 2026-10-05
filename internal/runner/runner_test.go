@@ -44,6 +44,19 @@ func TestRunDryRun(t *testing.T) {
 		t.Fatalf("expected dry-run to succeed, got error: %v", err)
 	}
 }
+func TestRunMissingCommand(t *testing.T) {
+	r := Runner{}
+
+	err := r.Run("this-command-definitely-does-not-exist")
+
+	if err == nil {
+		t.Fatal("expected missing command to return an error")
+	}
+
+	if !strings.Contains(err.Error(), "failed to execute") {
+		t.Fatalf("expected execution error, got %q", err.Error())
+	}
+}
 
 func TestOutputSuccessfulCommand(t *testing.T) {
 	r := Runner{}
