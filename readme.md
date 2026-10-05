@@ -67,4 +67,4 @@ The project is in Active development. Features and supported distributions will 
 
 ## License
 
-License to be decided.
+MIT
