@@ -7,6 +7,8 @@ import (
 	"strings"
 )
 
+var openOSRelease = os.Open
+
 type OSInfo struct {
 	Name    string
 	Version string
@@ -15,7 +17,7 @@ type OSInfo struct {
 }
 
 func GetOSInfo() (OSInfo, error) {
-	file, err := os.Open("/etc/os-release")
+	file, err := openOSRelease("/etc/os-release")
 	if err != nil {
 		return OSInfo{}, err
 	}
@@ -23,7 +25,6 @@ func GetOSInfo() (OSInfo, error) {
 
 	return parseOSReleaseReader(file)
 }
-
 func parseOSReleaseReader(reader io.Reader) (OSInfo, error) {
 	var builder strings.Builder
 

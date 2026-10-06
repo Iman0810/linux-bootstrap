@@ -2,6 +2,7 @@ package system
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 )
@@ -186,5 +187,73 @@ func TestParseOSReleaseReaderError(t *testing.T) {
 
 	if err.Error() != "read failed" {
 		t.Fatalf("expected read failed error, got %v", err)
+	}
+}
+func TestGetOSInfo(t *testing.T) {
+	originalOpen := openOSRelease
+	defer func() {
+		openOSRelease = originalOpen
+	}()
+
+	tempFile, err := os.CreateTemp("", "os-release-*")
+	if err != nil {
+		t.Fatalf("failed to create temp file: %v", err)
+	}
+	defer os.Remove(tempFile.Name())
+	defer tempFile.Close()
+
+	_, err = tempFile.WriteString(`NAME="Test Linux"
+VERSION="1.0"
+ID=test
+ID_LIKE=debian
+`)
+	if err != nil {
+		t.Fatalf("failed to write test data: %v", err)
+	}
+
+	if _, err := tempFile.Seek(0, 0); err != nil {
+		t.Fatalf("failed to seek test file: %v", err)
+	}
+
+	openOSRelease = func(_ string) (*os.File, error) {
+		return os.Open(tempFile.Name())
+	}
+
+	got, err := GetOSInfo()
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	expected := OSInfo{
+		Name:    "Test Linux",
+		Version: "1.0",
+		ID:      "test",
+		IDLike:  "debian",
+	}
+
+	if got != expected {
+		t.Fatalf("unexpected OS info: got %+v, want %+v", got, expected)
+	}
+}
+func TestGetOSInfoOpenFailure(t *testing.T) {
+	originalOpen := openOSRelease
+	defer func() {
+		openOSRelease = originalOpen
+	}()
+
+	expectedErr := fmt.Errorf("test open failure")
+
+	openOSRelease = func(_ string) (*os.File, error) {
+		return nil, expectedErr
+	}
+
+	got, err := GetOSInfo()
+
+	if err != expectedErr {
+		t.Fatalf("expected error %v, got %v", expectedErr, err)
+	}
+
+	if got != (OSInfo{}) {
+		t.Fatalf("expected empty OSInfo, got %+v", got)
 	}
 }
