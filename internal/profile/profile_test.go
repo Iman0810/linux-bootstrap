@@ -238,3 +238,98 @@ func TestPackagesForUnknownManager(t *testing.T) {
 		)
 	}
 }
+
+type mockPackageManager struct {
+	installed map[string]bool
+}
+
+func (m mockPackageManager) Update() error {
+	return nil
+}
+
+func (m mockPackageManager) Install(packages ...string) error {
+	return nil
+}
+
+func (m mockPackageManager) IsInstalled(packageName string) bool {
+	return m.installed[packageName]
+}
+
+func TestCheckStatus(t *testing.T) {
+	manager := mockPackageManager{
+		installed: map[string]bool{
+			"git":  true,
+			"curl": true,
+		},
+	}
+
+	status, ok := CheckStatus(
+		manager,
+		packages.APT,
+		Essentials,
+	)
+
+	if !ok {
+		t.Fatal("expected status check to succeed")
+	}
+
+	if status.Profile.Name != Essentials.Name {
+		t.Fatalf(
+			"expected profile %q, got %q",
+			Essentials.Name,
+			status.Profile.Name,
+		)
+	}
+
+	if len(status.Plan.Installed) != 2 {
+		t.Fatalf(
+			"expected 2 installed packages, got %d",
+			len(status.Plan.Installed),
+		)
+	}
+
+	if len(status.Plan.Missing) != 2 {
+		t.Fatalf(
+			"expected 2 missing packages, got %d",
+			len(status.Plan.Missing),
+		)
+	}
+}
+
+func TestCheckStatusUnsupportedManager(t *testing.T) {
+	manager := mockPackageManager{
+		installed: map[string]bool{},
+	}
+
+	status, ok := CheckStatus(
+		manager,
+		packages.Unknown,
+		Essentials,
+	)
+
+	if ok {
+		t.Fatal("expected status check to fail")
+	}
+
+	if status.Profile.Name != Essentials.Name {
+		t.Fatalf(
+			"expected profile %q, got %q",
+			Essentials.Name,
+			status.Profile.Name,
+		)
+	}
+
+	if len(status.Plan.Installed) != 0 {
+		t.Fatalf(
+			"expected no installed packages, got %v",
+			status.Plan.Installed,
+		)
+	}
+
+	if len(status.Plan.Missing) != 0 {
+		t.Fatalf(
+			"expected no missing packages, got %v",
+			status.Plan.Missing,
+		)
+	}
+}
