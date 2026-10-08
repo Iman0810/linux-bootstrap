@@ -17,6 +17,7 @@ type statusFakePackageManager struct {
 	installErr        error
 	updated           bool
 	installedPackages []string
+	skipInstall       bool
 }
 
 func (f *statusFakePackageManager) Update() error {
@@ -33,6 +34,10 @@ func (f *statusFakePackageManager) Install(packages ...string) error {
 		f.installedPackages,
 		packages...,
 	)
+
+	if f.skipInstall {
+		return nil
+	}
 
 	for _, packageName := range packages {
 		f.installed[packageName] = true
@@ -692,6 +697,46 @@ func TestRunSetupWithDependenciesSuccess(t *testing.T) {
 		if !fake.installed[packageName] {
 			t.Errorf("expected %s to be installed", packageName)
 		}
+	}
+}
+func TestRunSetupWithDependenciesVerificationFailure(t *testing.T) {
+	getOSInfo := func() (system.OSInfo, error) {
+		return system.OSInfo{
+			Name:    "Test Linux",
+			Version: "1.0",
+			ID:      "ubuntu",
+		}, nil
+	}
+
+	var fake *statusFakePackageManager
+
+	getPackageManager := func(
+		managerType packages.Manager,
+		r runner.Runner,
+	) packages.PackageManager {
+		fake = &statusFakePackageManager{
+			installed:   map[string]bool{},
+			skipInstall: true,
+		}
+
+		return fake
+	}
+
+	err := runSetupWithDependencies(
+		[]string{"--profile", "essentials"},
+		getOSInfo,
+		getPackageManager,
+		func(string) bool {
+			return true
+		},
+	)
+
+	if err == nil {
+		t.Fatal("expected verification failure")
+	}
+
+	if err.Error() != "setup verification failed: 4 package(s) still missing" {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }
 func TestRunSetupWithDependenciesUpdateFailure(t *testing.T) {
