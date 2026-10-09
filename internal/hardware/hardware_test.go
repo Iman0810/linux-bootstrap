@@ -281,5 +281,37 @@ func TestDetectHardwareWithRunnerNoNvidia(t *testing.T) {
 }
 
 func TestDetectHardwareWithRunnerNvidiaDriverFailure(t *testing.T) {
-	
+	runner := fakeCommandRunner{
+		outputs: map[string]string{
+			"lspci": `
+0000:00:02.0 VGA compatible controller: Intel Corporation UHD Graphics
+0000:01:00.0 VGA compatible controller: NVIDIA Corporation GeForce RTX 3050
+`,
+		},
+		errs: map[string]error{
+			"nvidia-smi": fmt.Errorf("nvidia-smi failed"),
+		},
+	}
+
+	got := DetectHardwareWithRunner(runner)
+
+	if len(got.GPUs) != 2 {
+		t.Fatalf("expected 2 GPUs, got %d", len(got.GPUs))
+	}
+
+	if !got.NvidiaFound {
+		t.Fatal("expected NVIDIA GPU to be found")
+	}
+
+	if got.Nvidia == nil {
+		t.Fatal("expected NVIDIA status")
+	}
+
+	if got.Nvidia.Installed {
+		t.Fatal("expected NVIDIA driver detection to fail")
+	}
+
+	if got.Nvidia.Version != "" {
+		t.Fatalf("expected empty driver version, got %q", got.Nvidia.Version)
+	}
 }
