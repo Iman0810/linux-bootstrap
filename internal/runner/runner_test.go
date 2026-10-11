@@ -1,6 +1,8 @@
 package runner
 
 import (
+	"io"
+	"os"
 	"strings"
 	"testing"
 )
@@ -36,12 +38,32 @@ func TestRunDryRun(t *testing.T) {
 		DryRun: true,
 	}
 
-	// "false" would fail if actually executed.
-	// Dry-run should return nil without executing it.
-	err := r.Run("false")
-
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
 	if err != nil {
-		t.Fatalf("expected dry-run to succeed, got error: %v", err)
+		t.Fatalf("failed to create stdout pipe: %v", err)
+	}
+
+	os.Stdout = writer
+
+	runErr := r.Run("false")
+
+	_ = writer.Close()
+	os.Stdout = originalStdout
+
+	output, readErr := io.ReadAll(reader)
+	_ = reader.Close()
+
+	if readErr != nil {
+		t.Fatalf("failed to read captured output: %v", readErr)
+	}
+
+	if runErr != nil {
+		t.Fatalf("expected dry-run to succeed, got error: %v", runErr)
+	}
+
+	if got, want := string(output), "[DRY RUN] false []\n"; got != want {
+		t.Fatalf("expected output %q, got %q", want, got)
 	}
 }
 func TestRunMissingCommand(t *testing.T) {
