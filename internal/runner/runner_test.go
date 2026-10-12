@@ -1,8 +1,10 @@
 package runner
 
 import (
+	"errors"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -38,6 +40,8 @@ func TestRunDryRun(t *testing.T) {
 		DryRun: true,
 	}
 
+	markerPath := filepath.Join(t.TempDir(), "command-executed")
+
 	originalStdout := os.Stdout
 	reader, writer, err := os.Pipe()
 	if err != nil {
@@ -46,7 +50,7 @@ func TestRunDryRun(t *testing.T) {
 
 	os.Stdout = writer
 
-	runErr := r.Run("false")
+	runErr := r.Run("touch", markerPath)
 
 	_ = writer.Close()
 	os.Stdout = originalStdout
@@ -62,8 +66,12 @@ func TestRunDryRun(t *testing.T) {
 		t.Fatalf("expected dry-run to succeed, got error: %v", runErr)
 	}
 
-	if got, want := string(output), "[DRY RUN] false []\n"; got != want {
-		t.Fatalf("expected output %q, got %q", want, got)
+	if !strings.Contains(string(output), "[DRY RUN] touch") {
+		t.Fatalf("expected dry-run message, got %q", string(output))
+	}
+
+	if _, err := os.Stat(markerPath); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("expected command not to execute; marker file status error: %v", err)
 	}
 }
 func TestRunMissingCommand(t *testing.T) {
