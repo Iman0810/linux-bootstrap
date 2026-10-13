@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"os/exec"
 )
 
 func TestRunSuccessfulCommand(t *testing.T) {
@@ -133,5 +134,53 @@ func TestOutputMissingCommand(t *testing.T) {
 
 	if !strings.Contains(err.Error(), "failed to execute") {
 		t.Fatalf("expected execution error, got %q", err.Error())
+	}
+}
+
+func TestRunFailedCommandPreservesExitError(t *testing.T) {
+	r := Runner{}
+
+	err := r.Run("false")
+	if err == nil {
+		t.Fatal("expected an error, got nil")
+	}
+
+	var exitErr *exec.ExitError
+	if !errors.As(err, &exitErr) {
+		t.Fatalf("expected error to wrap *exec.ExitError, got %T: %v", err, err)
+	}
+
+	if exitErr.ExitCode() != 1 {
+		t.Errorf("expected exit code 1, got %d", exitErr.ExitCode())
+	}
+
+	if err.Error() != `command "false" failed with exit code 1` {
+		t.Errorf("unexpected error message: %v", err)
+	}
+}
+
+func TestOutputFailedCommandPreservesExitError(t *testing.T) {
+	r := Runner{}
+
+	output, err := r.Output("sh", "-c", "printf 'failure output'; exit 2")
+	if err == nil {
+		t.Fatal("expected an error, got nil")
+	}
+
+	if output != "failure output" {
+		t.Errorf("expected output %q, got %q", "failure output", output)
+	}
+
+	var exitErr *exec.ExitError
+	if !errors.As(err, &exitErr) {
+		t.Fatalf("expected error to wrap *exec.ExitError, got %T: %v", err, err)
+	}
+
+	if exitErr.ExitCode() != 2 {
+		t.Errorf("expected exit code 2, got %d", exitErr.ExitCode())
+	}
+
+	if err.Error() != `command "sh" failed with exit code 2` {
+		t.Errorf("unexpected error message: %v", err)
 	}
 }
