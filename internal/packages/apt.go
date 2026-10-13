@@ -1,6 +1,8 @@
 package packages
 
 import (
+	"fmt"
+
 	"github.com/Iman0810/linux-bootstrap/internal/runner"
 )
 
@@ -9,13 +11,25 @@ type AptManager struct {
 }
 
 func (a AptManager) Update() error {
-	return a.Runner.Run("sudo", "apt", "update")
+	if err := a.Runner.Run("sudo", "apt", "update"); err != nil {
+		return fmt.Errorf("apt: failed to update package lists: %w", err)
+	}
+
+	return nil
 }
 
 func (a AptManager) Install(packages ...string) error {
 	args := append([]string{"apt", "install", "-y"}, packages...)
 
-	return a.Runner.Run("sudo", args...)
+	if err := a.Runner.Run("sudo", args...); err != nil {
+		return fmt.Errorf(
+			"apt: failed to install packages %v: %w",
+			packages,
+			err,
+		)
+	}
+
+	return nil
 }
 
 func (a AptManager) IsInstalled(packageName string) bool {

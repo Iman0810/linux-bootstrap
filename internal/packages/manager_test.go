@@ -3,6 +3,7 @@ package packages
 import (
 	"fmt"
 	"testing"
+	"errors"
 
 	"github.com/Iman0810/linux-bootstrap/internal/system"
 )
@@ -134,10 +135,20 @@ func TestAptManagerUpdateError(t *testing.T) {
 	manager := AptManager{Runner: fake}
 
 	err := manager.Update()
-	if err != expectedErr {
-		t.Fatalf("expected error %v, got %v", expectedErr, err)
+	if err == nil {
+		t.Fatal("expected an error, got nil")
+	}
+
+	if !errors.Is(err, expectedErr) {
+		t.Fatalf("expected original error to be preserved, got %v", err)
+	}
+
+	expectedMessage := "apt: failed to update package lists: apt update failed"
+	if err.Error() != expectedMessage {
+		t.Fatalf("expected error %q, got %q", expectedMessage, err.Error())
 	}
 }
+
 func TestAptManagerInstall(t *testing.T) {
 	fake := &fakeRunner{}
 	manager := AptManager{Runner: fake}
@@ -512,5 +523,93 @@ func TestManagerString(t *testing.T) {
 				)
 			}
 		})
+	}
+}
+
+func TestAptManagerInstallErrorAddsContext(t *testing.T) {
+	expectedErr := errors.New("command failed")
+
+	fake := &fakeRunner{
+		runErr: expectedErr,
+	}
+
+	manager := AptManager{Runner: fake}
+
+	err := manager.Install("git", "curl")
+	if err == nil {
+		t.Fatal("expected an error, got nil")
+	}
+
+	if !errors.Is(err, expectedErr) {
+		t.Fatalf("expected original error to be preserved, got %v", err)
+	}
+
+	expectedMessage := "apt: failed to install packages [git curl]: command failed"
+	if err.Error() != expectedMessage {
+		t.Fatalf("expected error %q, got %q", expectedMessage, err.Error())
+	}
+}
+
+func TestAptManagerUpdateErrorAddsContext(t *testing.T) {
+	expectedErr := errors.New("repository unavailable")
+
+	fake := &fakeRunner{
+		runErr: expectedErr,
+	}
+
+	manager := AptManager{Runner: fake}
+
+	err := manager.Update()
+	if err == nil {
+		t.Fatal("expected an error, got nil")
+	}
+
+	if !errors.Is(err, expectedErr) {
+		t.Fatalf("expected original error to be preserved, got %v", err)
+	}
+
+	expectedMessage := "apt: failed to update package lists: repository unavailable"
+	if err.Error() != expectedMessage {
+		t.Fatalf("expected error %q, got %q", expectedMessage, err.Error())
+	}
+}
+
+func TestDnfManagerInstallErrorAddsContext(t *testing.T) {
+	expectedErr := errors.New("command failed")
+	fake := &fakeRunner{runErr: expectedErr}
+	manager := DnfManager{Runner: fake}
+
+	err := manager.Install("git", "curl")
+	if err == nil {
+		t.Fatal("expected an error, got nil")
+	}
+
+	if !errors.Is(err, expectedErr) {
+		t.Fatalf("expected original error to be preserved, got %v", err)
+	}
+
+	expectedMessage := "dnf: failed to install packages [git curl]: command failed"
+	if err.Error() != expectedMessage {
+		t.Fatalf("expected error %q, got %q", expectedMessage, err.Error())
+	}
+}
+
+func TestPacmanInstallErrorAddsContext(t *testing.T) {
+	expectedErr := errors.New("command failed")
+	fake := &fakeRunner{runErr: expectedErr}
+	manager := PacmanManager{Runner: fake}
+
+	err := manager.Install("git", "curl")
+	if err == nil {
+		t.Fatal("expected an error, got nil")
+	}
+
+	if !errors.Is(err, expectedErr) {
+		t.Fatalf("expected original error to be preserved, got %v", err)
+	}
+
+	expectedMessage := "pacman: failed to install packages [git curl]: command failed"
+	if err.Error() != expectedMessage {
+		t.Fatalf("expected error %q, got %q", expectedMessage, err.Error())
 	}
 }
