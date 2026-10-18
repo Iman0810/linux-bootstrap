@@ -76,8 +76,9 @@ func TestRunArgsInvalidSetupFlag(t *testing.T) {
 		t.Fatal("expected error for invalid setup flag")
 	}
 }
+
 func TestRunInfoWithDependenciesOSError(t *testing.T) {
-	expectedErr := errors.New("os detection failed")
+	expectedErr := errors.New("OS detection failed")
 
 	getOSInfo := func() (system.OSInfo, error) {
 		return system.OSInfo{}, expectedErr
@@ -90,10 +91,20 @@ func TestRunInfoWithDependenciesOSError(t *testing.T) {
 
 	err := runInfoWithDependencies(getOSInfo, detectHardware)
 
+	if err == nil {
+		t.Fatal("expected an error, got nil")
+	}
+
 	if !errors.Is(err, expectedErr) {
-		t.Fatalf("expected %v, got %v", expectedErr, err)
+		t.Fatalf("expected original error to be preserved, got %v", err)
+	}
+
+	expectedMessage := "info: failed to detect operating system: OS detection failed"
+	if err.Error() != expectedMessage {
+		t.Fatalf("expected error %q, got %q", expectedMessage, err.Error())
 	}
 }
+
 func TestRunInfoWithDependenciesNoGPU(t *testing.T) {
 	getOSInfo := func() (system.OSInfo, error) {
 		return system.OSInfo{
@@ -179,8 +190,9 @@ func TestRunInfoWithDependenciesNvidiaMissing(t *testing.T) {
 		t.Fatalf("expected no error, got %v", err)
 	}
 }
+
 func TestRunStatusWithDependenciesOSError(t *testing.T) {
-	expectedErr := errors.New("os detection failed")
+	expectedErr := errors.New("OS detection failed")
 
 	getOSInfo := func() (system.OSInfo, error) {
 		return system.OSInfo{}, expectedErr
@@ -196,10 +208,20 @@ func TestRunStatusWithDependenciesOSError(t *testing.T) {
 		getPackageManager,
 	)
 
+	if err == nil {
+		t.Fatal("expected an error, got nil")
+	}
+
 	if !errors.Is(err, expectedErr) {
-		t.Fatalf("expected %v, got %v", expectedErr, err)
+		t.Fatalf("expected original error to be preserved, got %v", err)
+	}
+
+	expectedMessage := "status: failed to detect operating system: OS detection failed"
+	if err.Error() != expectedMessage {
+		t.Fatalf("expected error %q, got %q", expectedMessage, err.Error())
 	}
 }
+
 func TestRunStatusWithDependenciesUnsupportedManager(t *testing.T) {
 	getOSInfo := func() (system.OSInfo, error) {
 		return system.OSInfo{
@@ -222,6 +244,7 @@ func TestRunStatusWithDependenciesUnsupportedManager(t *testing.T) {
 		t.Fatal("expected error for unsupported package manager")
 	}
 }
+
 func TestRunStatusWithDependenciesReadyProfile(t *testing.T) {
 	getOSInfo := func() (system.OSInfo, error) {
 		return system.OSInfo{
@@ -416,8 +439,9 @@ func TestRunDoctorWithDependenciesNoRecommendations(t *testing.T) {
 		t.Fatalf("expected no error, got %v", err)
 	}
 }
+
 func TestRunSetupWithDependenciesOSError(t *testing.T) {
-	expectedErr := errors.New("os detection failed")
+	expectedErr := errors.New("OS detection failed")
 
 	getOSInfo := func() (system.OSInfo, error) {
 		return system.OSInfo{}, expectedErr
@@ -440,10 +464,20 @@ func TestRunSetupWithDependenciesOSError(t *testing.T) {
 		},
 	)
 
+	if err == nil {
+		t.Fatal("expected an error, got nil")
+	}
+
 	if !errors.Is(err, expectedErr) {
-		t.Fatalf("expected %v, got %v", expectedErr, err)
+		t.Fatalf("expected original error to be preserved, got %v", err)
+	}
+
+	expectedMessage := "setup: failed to detect operating system: OS detection failed"
+	if err.Error() != expectedMessage {
+		t.Fatalf("expected error %q, got %q", expectedMessage, err.Error())
 	}
 }
+
 
 func TestRunSetupWithDependenciesUnsupportedManager(t *testing.T) {
 	getOSInfo := func() (system.OSInfo, error) {

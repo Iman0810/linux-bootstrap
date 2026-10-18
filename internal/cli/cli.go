@@ -64,9 +64,8 @@ func runInfoWithDependencies(
 ) error {
 	osInfo, err := getOSInfo()
 	if err != nil {
-		return err
+    return fmt.Errorf("info: failed to detect operating system: %w", err)
 	}
-
 	packageManager := packages.DetectManager(osInfo)
 
 	fmt.Println("Linux Bootstrap")
@@ -283,7 +282,7 @@ func runStatusWithDependencies(
 ) error {
 	osInfo, err := getOSInfo()
 	if err != nil {
-		return err
+    return fmt.Errorf("status: failed to detect operating system: %w", err)
 	}
 
 	packageManager := packages.DetectManager(osInfo)
