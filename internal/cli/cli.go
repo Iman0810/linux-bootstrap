@@ -157,9 +157,9 @@ func runSetupWithDependencies(
 
 	osInfo, err := getOSInfo()
 	if err != nil {
-		return err
+    return fmt.Errorf("setup: failed to detect operating system: %w", err)
 	}
-
+	
 	packageManager := packages.DetectManager(osInfo)
 
 	r := runner.Runner{
