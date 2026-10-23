@@ -339,8 +339,17 @@ func TestRunDoctorWithDependenciesError(t *testing.T) {
 
 	err := runDoctorWithDependencies(runDoctor)
 
+	if err == nil {
+		t.Fatal("expected an error, got nil")
+	}
+
 	if !errors.Is(err, expectedErr) {
-		t.Fatalf("expected %v, got %v", expectedErr, err)
+		t.Fatalf("expected original error to be preserved, got %v", err)
+	}
+
+	expectedMessage := "doctor: failed to run diagnostics: doctor failed"
+	if err.Error() != expectedMessage {
+		t.Fatalf("expected error %q, got %q", expectedMessage, err.Error())
 	}
 }
 func TestRunDoctorWithDependenciesReport(t *testing.T) {

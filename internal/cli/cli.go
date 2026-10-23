@@ -352,9 +352,8 @@ func runDoctorWithDependencies(
 ) error {
 	report, err := runDoctor()
 	if err != nil {
-		return err
+    return fmt.Errorf("doctor: failed to run diagnostics: %w", err)
 	}
-
 	fmt.Println("Linux Bootstrap Doctor")
 	fmt.Println("----------------------")
 	fmt.Println()
