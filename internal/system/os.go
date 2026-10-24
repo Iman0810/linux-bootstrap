@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"fmt"
 )
 
 var openOSRelease = os.Open
@@ -23,7 +24,16 @@ func GetOSInfo() (OSInfo, error) {
 	}
 	defer file.Close()
 
-	return parseOSReleaseReader(file)
+	info, err := parseOSReleaseReader(file)
+	if err != nil {
+		return OSInfo{}, err
+	}
+
+	if strings.TrimSpace(info.ID) == "" {
+		return OSInfo{}, fmt.Errorf("invalid /etc/os-release: missing ID")
+	}
+
+	return info, nil
 }
 func parseOSReleaseReader(reader io.Reader) (OSInfo, error) {
 	var builder strings.Builder

@@ -257,3 +257,37 @@ func TestGetOSInfoOpenFailure(t *testing.T) {
 		t.Fatalf("expected empty OSInfo, got %+v", got)
 	}
 }
+func TestGetOSInfoMissingID(t *testing.T) {
+	originalOpen := openOSRelease
+	defer func() {
+		openOSRelease = originalOpen
+	}()
+
+	tempFile, err := os.CreateTemp("", "os-release-*")
+	if err != nil {
+		t.Fatalf("failed to create test file: %v", err)
+	}
+	defer os.Remove(tempFile.Name())
+	defer tempFile.Close()
+
+	_, err = tempFile.WriteString(`NAME="Unknown Linux"
+VERSION="1.0"
+`)
+	if err != nil {
+		t.Fatalf("failed to write test data: %v", err)
+	}
+
+	openOSRelease = func(_ string) (*os.File, error) {
+		return os.Open(tempFile.Name())
+	}
+
+	got, err := GetOSInfo()
+
+	if err == nil {
+		t.Fatal("expected an error when OS ID is missing")
+	}
+
+	if got != (OSInfo{}) {
+		t.Fatalf("expected empty OSInfo on failure, got %+v", got)
+	}
+}
