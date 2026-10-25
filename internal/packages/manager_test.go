@@ -75,6 +75,26 @@ func TestDetectManager(t *testing.T) {
 			id:       "something-random",
 			expected: Unknown,
 		},
+		{
+			name:     "Linux Mint",
+			id:       "linuxmint",
+			expected: APT,
+		},
+		{
+			name:     "Zorin OS",
+			id:       "zorin",
+			expected: APT,
+		},
+		{
+			name:     "Kali Linux",
+			id:       "kali",
+			expected: APT,
+		},
+		{
+			name:     "elementary OS",
+			id:       "elementary",
+			expected: APT,
+		},
 	}
 
 	for _, tt := range tests {

@@ -32,8 +32,8 @@ func DetectManager(osInfo system.OSInfo) Manager {
 
 func detectManagerByID(id string) Manager {
 	switch id {
-	case "ubuntu", "debian", "pop":
-		return APT
+		case "ubuntu", "debian", "pop", "linuxmint", "zorin", "kali", "elementary":
+			return APT
 
 	case "fedora", "rhel", "centos", "rocky", "almalinux":
 		return DNF
