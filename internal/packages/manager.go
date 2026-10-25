@@ -2,6 +2,7 @@ package packages
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/Iman0810/linux-bootstrap/internal/system"
 )
@@ -16,7 +17,21 @@ const (
 )
 
 func DetectManager(osInfo system.OSInfo) Manager {
-	switch osInfo.ID {
+	if manager := detectManagerByID(osInfo.ID); manager != Unknown {
+		return manager
+	}
+
+	for _, id := range strings.Fields(osInfo.IDLike) {
+		if manager := detectManagerByID(id); manager != Unknown {
+			return manager
+		}
+	}
+
+	return Unknown
+}
+
+func detectManagerByID(id string) Manager {
+	switch id {
 	case "ubuntu", "debian", "pop":
 		return APT
 
@@ -25,11 +40,11 @@ func DetectManager(osInfo system.OSInfo) Manager {
 
 	case "arch", "manjaro", "endeavouros":
 		return Pacman
+
+	default:
+		return Unknown
 	}
-
-	return Unknown
 }
-
 func (m Manager) String() string {
 	if m == Unknown {
 		return fmt.Sprintf("%q", string(m))

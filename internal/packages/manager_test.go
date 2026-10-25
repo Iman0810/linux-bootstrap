@@ -91,6 +91,43 @@ func TestDetectManager(t *testing.T) {
 		})
 	}
 }
+func TestDetectManagerUsesIDLikeFallback(t *testing.T) {
+	osInfo := system.OSInfo{
+		ID:     "custom-distro",
+		IDLike: "debian",
+	}
+
+	got := DetectManager(osInfo)
+
+	if got != APT {
+		t.Fatalf("expected %q, got %q", APT, got)
+	}
+}
+func TestDetectManagerUsesMultipleIDLikeValues(t *testing.T) {
+	osInfo := system.OSInfo{
+		ID:     "custom-distro",
+		IDLike: "ubuntu debian",
+	}
+
+	got := DetectManager(osInfo)
+
+	if got != APT {
+		t.Fatalf("expected %q, got %q", APT, got)
+	}
+}
+
+func TestDetectManagerPrefersPrimaryID(t *testing.T) {
+	osInfo := system.OSInfo{
+		ID:     "fedora",
+		IDLike: "debian",
+	}
+
+	got := DetectManager(osInfo)
+
+	if got != DNF {
+		t.Fatalf("expected %q, got %q", DNF, got)
+	}
+}
 func TestAptManagerUpdate(t *testing.T) {
 	fake := &fakeRunner{}
 	manager := AptManager{Runner: fake}
