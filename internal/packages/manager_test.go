@@ -1,9 +1,9 @@
 package packages
 
 import (
+	"errors"
 	"fmt"
 	"testing"
-	"errors"
 
 	"github.com/Iman0810/linux-bootstrap/internal/system"
 )
@@ -95,6 +95,41 @@ func TestDetectManager(t *testing.T) {
 			id:       "elementary",
 			expected: APT,
 		},
+		{
+			name:     "Devuan",
+			id:       "devuan",
+			expected: APT,
+		},
+		{
+			name:     "MX Linux",
+			id:       "mx",
+			expected: APT,
+		},
+		{
+			name:     "KDE neon",
+			id:       "neon",
+			expected: APT,
+		},
+		{
+			name:     "Oracle Linux",
+			id:       "ol",
+			expected: DNF,
+		},
+		{
+			name:     "Amazon Linux",
+			id:       "amzn",
+			expected: DNF,
+		},
+		{
+			name:     "Garuda Linux",
+			id:       "garuda",
+			expected: Pacman,
+		},
+		{
+			name:     "Artix Linux",
+			id:       "artix",
+			expected: Pacman,
+		},
 	}
 
 	for _, tt := range tests {
@@ -146,6 +181,18 @@ func TestDetectManagerPrefersPrimaryID(t *testing.T) {
 
 	if got != DNF {
 		t.Fatalf("expected %q, got %q", DNF, got)
+	}
+}
+func TestDetectManagerReturnsUnknownForUnsupportedIDLike(t *testing.T) {
+	osInfo := system.OSInfo{
+		ID:     "custom-distro",
+		IDLike: "custom-family another-family",
+	}
+
+	got := DetectManager(osInfo)
+
+	if got != Unknown {
+		t.Fatalf("expected %q, got %q", Unknown, got)
 	}
 }
 func TestAptManagerUpdate(t *testing.T) {

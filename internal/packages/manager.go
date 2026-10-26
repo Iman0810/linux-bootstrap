@@ -32,19 +32,21 @@ func DetectManager(osInfo system.OSInfo) Manager {
 
 func detectManagerByID(id string) Manager {
 	switch id {
-		case "ubuntu", "debian", "pop", "linuxmint", "zorin", "kali", "elementary":
-			return APT
+	case "ubuntu", "debian", "pop", "linuxmint", "zorin", "kali", "elementary",
+		"devuan", "mx", "neon":
+		return APT
 
-	case "fedora", "rhel", "centos", "rocky", "almalinux":
+	case "fedora", "rhel", "centos", "rocky", "almalinux", "ol", "amzn":
 		return DNF
 
-	case "arch", "manjaro", "endeavouros":
+	case "arch", "manjaro", "endeavouros", "garuda", "artix":
 		return Pacman
 
 	default:
 		return Unknown
 	}
 }
+
 func (m Manager) String() string {
 	if m == Unknown {
 		return fmt.Sprintf("%q", string(m))
