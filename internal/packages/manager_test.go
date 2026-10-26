@@ -146,6 +146,49 @@ func TestDetectManager(t *testing.T) {
 		})
 	}
 }
+
+func TestDetectManagerNormalizesID(t *testing.T) {
+	tests := []struct {
+		name     string
+		id       string
+		expected Manager
+	}{
+		{
+			name:     "uppercase ID",
+			id:       "FEDORA",
+			expected: DNF,
+		},
+		{
+			name:     "ID with surrounding whitespace",
+			id:       " pop ",
+			expected: APT,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := DetectManager(system.OSInfo{ID: tt.id})
+
+			if got != tt.expected {
+				t.Fatalf("expected %q, got %q", tt.expected, got)
+			}
+		})
+	}
+}
+
+func TestDetectManagerNormalizesIDLike(t *testing.T) {
+	osInfo := system.OSInfo{
+		ID:     "custom-distro",
+		IDLike: "  UBUNTU   debian  ",
+	}
+
+	got := DetectManager(osInfo)
+
+	if got != APT {
+		t.Fatalf("expected %q, got %q", APT, got)
+	}
+}
+
 func TestDetectManagerUsesIDLikeFallback(t *testing.T) {
 	osInfo := system.OSInfo{
 		ID:     "custom-distro",

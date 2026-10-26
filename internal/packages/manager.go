@@ -17,12 +17,14 @@ const (
 )
 
 func DetectManager(osInfo system.OSInfo) Manager {
-	if manager := detectManagerByID(osInfo.ID); manager != Unknown {
+	id := strings.ToLower(strings.TrimSpace(osInfo.ID))
+
+	if manager := detectManagerByID(id); manager != Unknown {
 		return manager
 	}
 
-	for _, id := range strings.Fields(osInfo.IDLike) {
-		if manager := detectManagerByID(id); manager != Unknown {
+	for _, idLike := range strings.Fields(strings.ToLower(osInfo.IDLike)) {
+		if manager := detectManagerByID(idLike); manager != Unknown {
 			return manager
 		}
 	}
