@@ -64,7 +64,7 @@ func runInfoWithDependencies(
 ) error {
 	osInfo, err := getOSInfo()
 	if err != nil {
-    return fmt.Errorf("info: failed to detect operating system: %w", err)
+		return fmt.Errorf("info: failed to detect operating system: %w", err)
 	}
 	packageManager := packages.DetectManager(osInfo)
 
@@ -119,20 +119,38 @@ func runProfiles() {
 }
 
 func runSetup(args []string) error {
-	return runSetupWithDependencies(
+	return runSetupWithDependenciesAndValidator(
 		args,
 		system.GetOSInfo,
 		func(managerType packages.Manager, r runner.Runner) packages.PackageManager {
 			return packages.GetPackageManager(managerType, r)
 		},
 		prompt.Confirm,
+		packages.ValidateManagerAvailable,
 	)
 }
+
 func runSetupWithDependencies(
 	args []string,
 	getOSInfo func() (system.OSInfo, error),
 	getPackageManager func(packages.Manager, runner.Runner) packages.PackageManager,
 	confirm func(string) bool,
+) error {
+	return runSetupWithDependenciesAndValidator(
+		args,
+		getOSInfo,
+		getPackageManager,
+		confirm,
+		func(packages.Manager) error { return nil },
+	)
+}
+
+func runSetupWithDependenciesAndValidator(
+	args []string,
+	getOSInfo func() (system.OSInfo, error),
+	getPackageManager func(packages.Manager, runner.Runner) packages.PackageManager,
+	confirm func(string) bool,
+	validateManager func(packages.Manager) error,
 ) error {
 	setupFlags := flag.NewFlagSet("setup", flag.ContinueOnError)
 
@@ -157,9 +175,9 @@ func runSetupWithDependencies(
 
 	osInfo, err := getOSInfo()
 	if err != nil {
-    return fmt.Errorf("setup: failed to detect operating system: %w", err)
+		return fmt.Errorf("setup: failed to detect operating system: %w", err)
 	}
-	
+
 	packageManager := packages.DetectManager(osInfo)
 
 	r := runner.Runner{
@@ -167,20 +185,19 @@ func runSetupWithDependencies(
 	}
 
 	manager := getPackageManager(packageManager, r)
-
 	if manager == nil {
-		return fmt.Errorf(
-			"unsupported package manager: %s",
-			packageManager,
-		)
+		return fmt.Errorf("unsupported package manager: %s", packageManager)
 	}
 
 	selectedProfile, ok := profile.Get(*profileName)
 	if !ok {
-		return fmt.Errorf(
-			"unknown profile: %s",
-			*profileName,
-		)
+		return fmt.Errorf("unknown profile: %s", *profileName)
+	}
+
+	if !*dryRun {
+		if err := validateManager(packageManager); err != nil {
+			return fmt.Errorf("setup: %w", err)
+		}
 	}
 
 	service := setup.Service{
@@ -267,12 +284,13 @@ func runSetupWithDependencies(
 	return nil
 }
 func runStatus() error {
-	return runStatusWithDependencies(
+	return runStatusWithDependenciesAndValidator(
 		system.GetOSInfo,
 		func(managerType packages.Manager) packages.PackageManager {
 			r := runner.Runner{}
 			return packages.GetPackageManager(managerType, r)
 		},
+		packages.ValidateManagerAvailable,
 	)
 }
 
@@ -280,20 +298,32 @@ func runStatusWithDependencies(
 	getOSInfo func() (system.OSInfo, error),
 	getPackageManager func(packages.Manager) packages.PackageManager,
 ) error {
+	return runStatusWithDependenciesAndValidator(
+		getOSInfo,
+		getPackageManager,
+		func(packages.Manager) error { return nil },
+	)
+}
+
+func runStatusWithDependenciesAndValidator(
+	getOSInfo func() (system.OSInfo, error),
+	getPackageManager func(packages.Manager) packages.PackageManager,
+	validateManager func(packages.Manager) error,
+) error {
 	osInfo, err := getOSInfo()
 	if err != nil {
-    return fmt.Errorf("status: failed to detect operating system: %w", err)
+		return fmt.Errorf("status: failed to detect operating system: %w", err)
 	}
 
 	packageManager := packages.DetectManager(osInfo)
 
 	manager := getPackageManager(packageManager)
-
 	if manager == nil {
-		return fmt.Errorf(
-			"unsupported package manager: %s",
-			packageManager,
-		)
+		return fmt.Errorf("unsupported package manager: %s", packageManager)
+	}
+
+	if err := validateManager(packageManager); err != nil {
+		return fmt.Errorf("status: %w", err)
 	}
 
 	fmt.Println("Linux Bootstrap Status")
@@ -314,26 +344,16 @@ func runStatusWithDependencies(
 		)
 
 		if !supported {
-			fmt.Printf(
-				"⚠ %-15s Unsupported\n",
-				p.Name,
-			)
+			fmt.Printf("⚠ %-15s Unsupported\n", p.Name)
 			continue
 		}
 
 		if len(status.Plan.Missing) == 0 {
-			fmt.Printf(
-				"✓ %-15s Ready\n",
-				p.Name,
-			)
+			fmt.Printf("✓ %-15s Ready\n", p.Name)
 			continue
 		}
 
-		fmt.Printf(
-			"✗ %-15s Missing %d package(s)\n",
-			p.Name,
-			len(status.Plan.Missing),
-		)
+		fmt.Printf("✗ %-15s Missing %d package(s)\n", p.Name, len(status.Plan.Missing))
 
 		for _, packageName := range status.Plan.Missing {
 			fmt.Println("    -", packageName)
@@ -342,7 +362,6 @@ func runStatusWithDependencies(
 
 	return nil
 }
-
 func runDoctor() error {
 	return runDoctorWithDependencies(doctor.Run)
 }
@@ -352,7 +371,7 @@ func runDoctorWithDependencies(
 ) error {
 	report, err := runDoctor()
 	if err != nil {
-    return fmt.Errorf("doctor: failed to run diagnostics: %w", err)
+		return fmt.Errorf("doctor: failed to run diagnostics: %w", err)
 	}
 	fmt.Println("Linux Bootstrap Doctor")
 	fmt.Println("----------------------")

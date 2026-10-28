@@ -487,7 +487,6 @@ func TestRunSetupWithDependenciesOSError(t *testing.T) {
 	}
 }
 
-
 func TestRunSetupWithDependenciesUnsupportedManager(t *testing.T) {
 	getOSInfo := func() (system.OSInfo, error) {
 		return system.OSInfo{
@@ -579,6 +578,57 @@ func TestRunSetupWithDependenciesUnsupportedProfileMapping(t *testing.T) {
 
 	if err == nil {
 		t.Fatal("expected error for unsupported profile mapping")
+	}
+}
+
+func TestRunSetupWithDependenciesManagerUnavailable(t *testing.T) {
+	getOSInfo := func() (system.OSInfo, error) {
+		return system.OSInfo{
+			Name:    "Test Linux",
+			Version: "1.0",
+			ID:      "ubuntu",
+		}, nil
+	}
+
+	getPackageManager := func(
+		managerType packages.Manager,
+		r runner.Runner,
+	) packages.PackageManager {
+		return &statusFakePackageManager{
+			installed: map[string]bool{},
+		}
+	}
+
+	expectedErr := errors.New("executable not found")
+	confirmationCalled := false
+
+	err := runSetupWithDependenciesAndValidator(
+		[]string{"--profile", "essentials"},
+		getOSInfo,
+		getPackageManager,
+		func(string) bool {
+			confirmationCalled = true
+			return true
+		},
+		func(manager packages.Manager) error {
+			if manager != packages.APT {
+				t.Fatalf("expected APT manager, got %v", manager)
+			}
+			return expectedErr
+		},
+	)
+
+	if !errors.Is(err, expectedErr) {
+		t.Fatalf("expected original error to be preserved, got %v", err)
+	}
+
+	expectedMessage := "setup: executable not found"
+	if err.Error() != expectedMessage {
+		t.Fatalf("expected error %q, got %q", expectedMessage, err.Error())
+	}
+
+	if confirmationCalled {
+		t.Fatal("confirmation should not be called when the package manager is unavailable")
 	}
 }
 
