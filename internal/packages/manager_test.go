@@ -760,3 +760,44 @@ func TestPacmanInstallErrorAddsContext(t *testing.T) {
 		t.Fatalf("expected error %q, got %q", expectedMessage, err.Error())
 	}
 }
+func TestValidateManagerAvailable(t *testing.T) {
+	tests := []struct {
+		name       string
+		manager    Manager
+		lookupPath string
+		lookupErr  error
+		wantErr    bool
+	}{
+		{
+			name:       "APT available",
+			manager:    APT,
+			lookupPath: "/usr/bin/apt",
+		},
+		{
+			name:      "DNF unavailable",
+			manager:   DNF,
+			lookupErr: errors.New("executable file not found"),
+			wantErr:   true,
+		},
+		{
+			name:      "unknown manager",
+			manager:   Unknown,
+			lookupErr: errors.New("executable file not found"),
+			wantErr:   true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			lookup := func(string) (string, error) {
+				return tt.lookupPath, tt.lookupErr
+			}
+
+			err := validateManagerAvailable(tt.manager, lookup)
+
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("expected error: %v, got: %v", tt.wantErr, err)
+			}
+		})
+	}
+}

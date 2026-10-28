@@ -2,6 +2,7 @@ package packages
 
 import (
 	"fmt"
+	"os/exec"
 	"strings"
 
 	"github.com/Iman0810/linux-bootstrap/internal/system"
@@ -47,6 +48,37 @@ func detectManagerByID(id string) Manager {
 	default:
 		return Unknown
 	}
+}
+func validateManagerAvailable(
+	manager Manager,
+	lookPath func(string) (string, error),
+) error {
+	var command string
+
+	switch manager {
+	case APT:
+		command = "apt"
+	case DNF:
+		command = "dnf"
+	case Pacman:
+		command = "pacman"
+	default:
+		return fmt.Errorf("unsupported package manager: %s", manager)
+	}
+
+	if _, err := lookPath(command); err != nil {
+		return fmt.Errorf(
+			"package manager %q is not available in PATH: %w",
+			command,
+			err,
+		)
+	}
+
+	return nil
+}
+
+func ValidateManagerAvailable(manager Manager) error {
+	return validateManagerAvailable(manager, exec.LookPath)
 }
 
 func (m Manager) String() string {
