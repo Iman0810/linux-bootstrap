@@ -384,7 +384,16 @@ func runDoctorWithDependencies(
 	fmt.Println()
 	fmt.Println("Package Manager")
 	fmt.Println("---------------")
-	fmt.Println("✓", report.PackageManager)
+
+	if report.PackageManagerAvailable {
+		fmt.Println("✓", report.PackageManager)
+	} else {
+		fmt.Println("✗", report.PackageManager)
+
+		if report.PackageManagerError != "" {
+			fmt.Println(" ", report.PackageManagerError)
+		}
+	}
 
 	fmt.Println()
 	fmt.Println("Hardware")
@@ -412,25 +421,29 @@ func runDoctorWithDependencies(
 	}
 
 	fmt.Println()
+	fmt.Println()
 	fmt.Println("Profiles")
 	fmt.Println("--------")
 
-	for _, p := range report.Profiles {
-		if p.Ready {
-			fmt.Printf("✓ %-15s Ready\n", p.Name)
-		} else {
-			fmt.Printf(
-				"✗ %-15s Missing %d package(s)\n",
-				p.Name,
-				len(p.Missing),
-			)
+	if !report.PackageManagerAvailable {
+		fmt.Println("⚠ Package profile checks skipped because the package manager is unavailable.")
+	} else {
+		for _, p := range report.Profiles {
+			if p.Ready {
+				fmt.Printf("✓ %-15s Ready\n", p.Name)
+			} else {
+				fmt.Printf(
+					"✗ %-15s Missing %d package(s)\n",
+					p.Name,
+					len(p.Missing),
+				)
 
-			for _, packageName := range p.Missing {
-				fmt.Println("    -", packageName)
+				for _, packageName := range p.Missing {
+					fmt.Println("    -", packageName)
+				}
 			}
 		}
 	}
-
 	recommendations := recommendation.Generate(report)
 
 	fmt.Println()

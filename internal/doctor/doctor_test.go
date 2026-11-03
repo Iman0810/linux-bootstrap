@@ -490,3 +490,66 @@ func TestRunWithDependenciesUnsupportedProfileMapping(t *testing.T) {
 		}
 	}
 }
+
+func TestRunWithDependenciesAndValidatorManagerUnavailable(t *testing.T) {
+	expectedErr := fmt.Errorf("package manager executable not found")
+
+	manager := fakePackageManager{
+		installed: map[string]bool{
+			"git": true,
+		},
+	}
+
+	report, err := RunWithDependenciesAndValidator(
+		func() (system.OSInfo, error) {
+			return system.OSInfo{
+				Name: "Pop!_OS",
+				ID:   "pop",
+			}, nil
+		},
+		func() hardware.HardwareStatus {
+			return hardware.HardwareStatus{
+				NvidiaFound: true,
+			}
+		},
+		func(managerType packages.Manager) packages.PackageManager {
+			if managerType != packages.APT {
+				t.Fatalf("expected APT, got %q", managerType)
+			}
+			return manager
+		},
+		func(managerType packages.Manager) error {
+			if managerType != packages.APT {
+				t.Fatalf("expected APT validation, got %q", managerType)
+			}
+			return expectedErr
+		},
+	)
+
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if report.PackageManagerAvailable {
+		t.Fatal("expected package manager to be unavailable")
+	}
+
+	if report.PackageManagerError != expectedErr.Error() {
+		t.Fatalf(
+			"expected package manager error %q, got %q",
+			expectedErr.Error(),
+			report.PackageManagerError,
+		)
+	}
+
+	if len(report.Profiles) != 0 {
+		t.Fatalf(
+			"expected profile checks to be skipped, got %d profiles",
+			len(report.Profiles),
+		)
+	}
+
+	if !report.NvidiaFound {
+		t.Fatal("expected hardware diagnostics to remain available")
+	}
+}

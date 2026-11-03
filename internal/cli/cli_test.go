@@ -245,6 +245,44 @@ func TestRunStatusWithDependenciesUnsupportedManager(t *testing.T) {
 	}
 }
 
+func TestRunStatusWithDependenciesManagerUnavailable(t *testing.T) {
+	getOSInfo := func() (system.OSInfo, error) {
+		return system.OSInfo{
+			Name:    "Test Linux",
+			Version: "1.0",
+			ID:      "ubuntu",
+		}, nil
+	}
+
+	getPackageManager := func(managerType packages.Manager) packages.PackageManager {
+		return &statusFakePackageManager{
+			installed: map[string]bool{},
+		}
+	}
+
+	expectedErr := errors.New("executable not found")
+
+	err := runStatusWithDependenciesAndValidator(
+		getOSInfo,
+		getPackageManager,
+		func(manager packages.Manager) error {
+			if manager != packages.APT {
+				t.Fatalf("expected APT manager, got %v", manager)
+			}
+			return expectedErr
+		},
+	)
+
+	if !errors.Is(err, expectedErr) {
+		t.Fatalf("expected original error to be preserved, got %v", err)
+	}
+
+	expectedMessage := "status: executable not found"
+	if err.Error() != expectedMessage {
+		t.Fatalf("expected error %q, got %q", expectedMessage, err.Error())
+	}
+}
+
 func TestRunStatusWithDependenciesReadyProfile(t *testing.T) {
 	getOSInfo := func() (system.OSInfo, error) {
 		return system.OSInfo{

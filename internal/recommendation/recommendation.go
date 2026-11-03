@@ -14,6 +14,23 @@ type Recommendation struct {
 
 func Generate(report doctor.Report) []Recommendation {
 	var recommendations []Recommendation
+	// Package manager availability
+	if !report.PackageManagerAvailable {
+		description := report.PackageManagerError
+
+		if description == "" {
+			description = fmt.Sprintf(
+				"The expected package manager %s is unavailable.",
+				report.PackageManager,
+			)
+		}
+
+		recommendations = append(recommendations, Recommendation{
+			Title:       "Package manager unavailable",
+			Description: description,
+			Command:     "Install or restore the expected package manager, then rerun linux-bootstrap doctor.",
+		})
+	}
 
 	// NVIDIA driver
 	if report.NvidiaFound && !report.NvidiaInstalled {

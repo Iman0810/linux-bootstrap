@@ -1,6 +1,8 @@
 package doctor
 
 import (
+	"fmt"
+
 	"github.com/Iman0810/linux-bootstrap/internal/hardware"
 	"github.com/Iman0810/linux-bootstrap/internal/packages"
 	"github.com/Iman0810/linux-bootstrap/internal/profile"
@@ -9,13 +11,15 @@ import (
 )
 
 type Report struct {
-	OS              system.OSInfo
-	PackageManager  packages.Manager
-	GPUs            []hardware.GPU
-	NvidiaFound     bool
-	NvidiaInstalled bool
-	NvidiaVersion   string
-	Profiles        []ProfileStatus
+	OS                      system.OSInfo
+	PackageManager          packages.Manager
+	GPUs                    []hardware.GPU
+	NvidiaFound             bool
+	NvidiaInstalled         bool
+	NvidiaVersion           string
+	Profiles                []ProfileStatus
+	PackageManagerAvailable bool
+	PackageManagerError     string
 }
 
 type ProfileStatus struct {
@@ -27,12 +31,13 @@ type ProfileStatus struct {
 func Run() (Report, error) {
 	r := runner.Runner{}
 
-	return RunWithDependencies(
+	return RunWithDependenciesAndValidator(
 		system.GetOSInfo,
 		hardware.DetectHardware,
 		func(manager packages.Manager) packages.PackageManager {
 			return packages.GetPackageManager(manager, r)
 		},
+		packages.ValidateManagerAvailable,
 	)
 }
 
@@ -41,20 +46,49 @@ func RunWithDependencies(
 	detectHardware func() hardware.HardwareStatus,
 	getPackageManager func(packages.Manager) packages.PackageManager,
 ) (Report, error) {
+	return RunWithDependenciesAndValidator(
+		getOSInfo,
+		detectHardware,
+		getPackageManager,
+		func(packages.Manager) error {
+			return nil
+		},
+	)
+}
+
+func RunWithDependenciesAndValidator(
+	getOSInfo func() (system.OSInfo, error),
+	detectHardware func() hardware.HardwareStatus,
+	getPackageManager func(packages.Manager) packages.PackageManager,
+	validateManager func(packages.Manager) error,
+) (Report, error) {
 	osInfo, err := getOSInfo()
 	if err != nil {
 		return Report{}, err
 	}
 
 	packageManager := packages.DetectManager(osInfo)
-
 	hardwareStatus := detectHardware()
-
 	manager := getPackageManager(packageManager)
 
 	var profiles []ProfileStatus
+	managerAvailable := false
+	managerError := ""
 
-	if manager != nil {
+	if manager == nil {
+		if packageManager == packages.Unknown {
+			managerError = "unsupported distribution: no supported package manager mapping found"
+		} else {
+			managerError = fmt.Sprintf(
+				"no package manager implementation available for %s",
+				packageManager,
+			)
+		}
+	} else if err := validateManager(packageManager); err != nil {
+		managerError = err.Error()
+	} else {
+		managerAvailable = true
+
 		for _, p := range profile.List() {
 			status, supported := profile.CheckStatus(
 				manager,
@@ -77,12 +111,17 @@ func RunWithDependencies(
 		}
 	}
 
-	return BuildReport(
+	report := BuildReport(
 		osInfo,
 		packageManager,
 		hardwareStatus,
 		profiles,
-	), nil
+	)
+
+	report.PackageManagerAvailable = managerAvailable
+	report.PackageManagerError = managerError
+
+	return report, nil
 }
 
 func BuildReport(

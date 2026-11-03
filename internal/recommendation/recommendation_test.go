@@ -8,7 +8,9 @@ import (
 )
 
 func TestGenerateNoRecommendations(t *testing.T) {
-	report := doctor.Report{}
+	report := doctor.Report{
+		PackageManagerAvailable: true,
+	}
 
 	got := Generate(report)
 
@@ -19,8 +21,9 @@ func TestGenerateNoRecommendations(t *testing.T) {
 
 func TestGenerateNvidiaRecommendation(t *testing.T) {
 	report := doctor.Report{
-		NvidiaFound:     true,
-		NvidiaInstalled: false,
+		PackageManagerAvailable: true,
+		NvidiaFound:             true,
+		NvidiaInstalled:         false,
 	}
 
 	got := Generate(report)
@@ -42,8 +45,9 @@ func TestGenerateNvidiaRecommendation(t *testing.T) {
 
 func TestGenerateSkipsInstalledNvidiaDriver(t *testing.T) {
 	report := doctor.Report{
-		NvidiaFound:     true,
-		NvidiaInstalled: true,
+		PackageManagerAvailable: true,
+		NvidiaFound:             true,
+		NvidiaInstalled:         true,
 	}
 
 	got := Generate(report)
@@ -55,6 +59,7 @@ func TestGenerateSkipsInstalledNvidiaDriver(t *testing.T) {
 
 func TestGenerateProfileRecommendation(t *testing.T) {
 	report := doctor.Report{
+		PackageManagerAvailable: true,
 		Profiles: []doctor.ProfileStatus{
 			{
 				Name:    "multimedia",
@@ -83,6 +88,7 @@ func TestGenerateProfileRecommendation(t *testing.T) {
 
 func TestGenerateSkipsReadyProfiles(t *testing.T) {
 	report := doctor.Report{
+		PackageManagerAvailable: true,
 		Profiles: []doctor.ProfileStatus{
 			{
 				Name:    "essentials",
@@ -101,8 +107,9 @@ func TestGenerateSkipsReadyProfiles(t *testing.T) {
 
 func TestGenerateMultipleRecommendations(t *testing.T) {
 	report := doctor.Report{
-		NvidiaFound:     true,
-		NvidiaInstalled: false,
+		PackageManagerAvailable: true,
+		NvidiaFound:             true,
+		NvidiaInstalled:         false,
 		Profiles: []doctor.ProfileStatus{
 			{
 				Name:    "multimedia",
@@ -137,5 +144,32 @@ func TestGenerateMultipleRecommendations(t *testing.T) {
 
 	if got[2].Title != "Install essentials profile" {
 		t.Errorf("unexpected third recommendation: %q", got[2].Title)
+	}
+}
+func TestGeneratePackageManagerUnavailable(t *testing.T) {
+	report := doctor.Report{
+		PackageManager:          "apt",
+		PackageManagerAvailable: false,
+		PackageManagerError:     "package manager executable not found",
+	}
+
+	got := Generate(report)
+
+	if len(got) != 1 {
+		t.Fatalf("expected 1 recommendation, got %d", len(got))
+	}
+
+	expected := Recommendation{
+		Title:       "Package manager unavailable",
+		Description: "package manager executable not found",
+		Command:     "Install or restore the expected package manager, then rerun linux-bootstrap doctor.",
+	}
+
+	if !reflect.DeepEqual(got[0], expected) {
+		t.Fatalf(
+			"unexpected recommendation:\n got:  %+v\nwant: %+v",
+			got[0],
+			expected,
+		)
 	}
 }
